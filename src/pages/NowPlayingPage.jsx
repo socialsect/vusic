@@ -37,6 +37,7 @@ function formatSleepTime(sec) {
 export function NowPlayingPage({ onNavigate }) {
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [queueOpen, setQueueOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [lyricsOpen, setLyricsOpen] = useState(false)
   const [sleepPickerOpen, setSleepPickerOpen] = useState(false)
   const [playlistPickerOpen, setPlaylistPickerOpen] = useState(false)
@@ -71,6 +72,7 @@ export function NowPlayingPage({ onNavigate }) {
     playTrack,
     addToQueue,
     jumpToQueueIndex,
+    recentHistory,
     sleepTimerSeconds,
     setSleepTimerSeconds
   } = usePlayer()
@@ -290,6 +292,13 @@ export function NowPlayingPage({ onNavigate }) {
         >
           <span>QUEUE</span>
         </button>
+        <button
+          type="button"
+          className={styles.extraBtn}
+          onClick={() => setHistoryOpen(true)}
+        >
+          <span>HISTORY</span>
+        </button>
       </div>
 
       <div className={styles.lyrics}>
@@ -336,6 +345,19 @@ export function NowPlayingPage({ onNavigate }) {
           onSelectTrack={(idx) => {
             jumpToQueueIndex(idx)
             setQueueOpen(false)
+          }}
+          isPlaying={isPlaying}
+        />
+      )}
+
+      {historyOpen && (
+        <HistorySheet
+          history={recentHistory}
+          currentTrack={currentTrack}
+          onClose={() => setHistoryOpen(false)}
+          onSelectTrack={(track, index) => {
+            playTrack(track, recentHistory, index, true)
+            setHistoryOpen(false)
           }}
           isPlaying={isPlaying}
         />
@@ -397,6 +419,35 @@ function QueueSheet({ queue, queueIndex, currentTrack, onClose, onSelectTrack, i
               onClick={() => onSelectTrack(i)}
             >
               {i === queueIndex && isPlaying && <Equalizer />}
+              <img src={t.thumbnail} alt="" />
+              <div className={styles.queueInfo}>
+                <span>{t.title}</span>
+                <span className={styles.queueChannel}>{t.channel}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HistorySheet({ history, currentTrack, onClose, onSelectTrack, isPlaying }) {
+  const list = Array.isArray(history) ? history : []
+  return (
+    <div className={styles.sheetBackdrop} onClick={onClose}>
+      <div className={styles.queueSheet} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.sheetHandle} />
+        <h3 className={styles.queueTitle}>HISTORY</h3>
+        <div className={styles.queueList}>
+          {list.map((t, i) => (
+            <button
+              key={`${t.videoId}-${i}`}
+              type="button"
+              className={`${styles.queueItem} ${currentTrack?.videoId === t.videoId ? styles.queueActive : ''}`}
+              onClick={() => onSelectTrack(t, i)}
+            >
+              {currentTrack?.videoId === t.videoId && isPlaying && <Equalizer />}
               <img src={t.thumbnail} alt="" />
               <div className={styles.queueInfo}>
                 <span>{t.title}</span>

@@ -10,6 +10,7 @@ import styles from '../styles/SearchPage.module.css'
 
 const BASE_URL = 'https://vusic-backend-production.up.railway.app'
 const CHIPS_KEY = 'vusic_search_chips'
+const RECENT_SEARCH_PLAYED_KEY = 'vusic_recent_search_played'
 const DEFAULT_CHIPS = ['HIP HOP', 'POP', 'ROCK', 'LOFI', 'JAZZ', 'ELECTRONIC', 'TRENDING']
 
 export function SearchPage({ onNavigate }) {
@@ -20,8 +21,9 @@ export function SearchPage({ onNavigate }) {
   const [playlistModalTrack, setPlaylistModalTrack] = useState(null)
   const [showChipEditor, setShowChipEditor] = useState(false)
   const [chips, setChips] = useLocalStorage(CHIPS_KEY, DEFAULT_CHIPS)
+  const [recentSearchPlayed, setRecentSearchPlayed] = useLocalStorage(RECENT_SEARCH_PLAYED_KEY, [])
   const debouncedQuery = useDebounce(query, 500)
-  const { playTrack, recentHistory, clearHistory } = usePlayer()
+  const { playTrack } = usePlayer()
   const doSearchRef = useRef(() => {})
 
   const doSearch = (q) => {
@@ -64,6 +66,11 @@ export function SearchPage({ onNavigate }) {
 
   const handleTrackClick = (track) => {
     playTrack(track, results, results.findIndex((t) => t.videoId === track.videoId), true)
+    setRecentSearchPlayed((prev) => {
+      const filtered = (prev || []).filter((t) => t.videoId !== track.videoId)
+      const next = [track, ...filtered].slice(0, 20)
+      return next
+    })
     onNavigate?.('nowplaying')
   }
 
@@ -73,15 +80,15 @@ export function SearchPage({ onNavigate }) {
   }
 
   const handleRecentTrackClick = (track) => {
-    const idx = recentHistory.findIndex((t) => t.videoId === track.videoId)
-    const queue = recentHistory
+    const list = Array.isArray(recentSearchPlayed) ? recentSearchPlayed : []
+    const idx = list.findIndex((t) => t.videoId === track.videoId)
     const index = idx >= 0 ? idx : 0
-    playTrack(track, queue, index, true)
+    playTrack(track, list, index, true)
     setShowRecent(false)
     onNavigate?.('nowplaying')
   }
 
-  const clearRecent = () => clearHistory()
+  const clearRecent = () => setRecentSearchPlayed([])
 
   return (
     <div className={styles.page}>
@@ -121,16 +128,16 @@ export function SearchPage({ onNavigate }) {
         </button>
       </div>
 
-      {showRecent && !query && recentHistory.length > 0 && (
+      {showRecent && !query && Array.isArray(recentSearchPlayed) && recentSearchPlayed.length > 0 && (
         <div className={styles.recent}>
           <div className={styles.recentHeader}>
-            <span className={styles.label}>RECENTLY PLAYED</span>
+            <span className={styles.label}>RECENTLY PLAYED FROM SEARCH</span>
             <button type="button" className={styles.clearBtn} onClick={clearRecent}>
               ✕
             </button>
           </div>
           <ul className={styles.recentList}>
-            {recentHistory.slice(0, 10).map((track) => (
+            {recentSearchPlayed.slice(0, 10).map((track) => (
               <li key={track.videoId}>
                 <button
                   type="button"
