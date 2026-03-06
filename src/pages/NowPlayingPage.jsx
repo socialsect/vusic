@@ -20,16 +20,17 @@ import { Equalizer } from '../components/Equalizer'
 import { PlaylistPickerModal } from '../components/PlaylistPickerModal'
 import styles from '../styles/NowPlayingPage.module.css'
 
-function formatTime(sec) {
-  if (!sec || isNaN(sec)) return '0:00'
-  const m = Math.floor(sec / 60)
-  const s = Math.floor(sec % 60)
+function formatTime(secs) {
+  if (secs == null || !Number.isFinite(secs) || Number.isNaN(secs)) return '0:00'
+  const m = Math.floor(secs / 60)
+  const s = Math.floor(secs % 60)
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 function formatSleepTime(sec) {
+  if (sec == null || !Number.isFinite(sec)) return '0:00'
   const m = Math.floor(sec / 60)
-  const s = sec % 60
+  const s = Math.floor(sec % 60)
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
@@ -152,7 +153,9 @@ export function NowPlayingPage({ onNavigate }) {
     )
   }
 
-  const remaining = duration > 0 ? duration - currentTime : 0
+  const safeDuration = Number.isFinite(duration) && !Number.isNaN(duration) && duration > 0 ? duration : 0
+  const safeCurrentTime = Number.isFinite(currentTime) && !Number.isNaN(currentTime) ? Math.max(0, currentTime) : 0
+  const remaining = safeDuration > 0 ? safeDuration - safeCurrentTime : 0
 
   return (
     <div
@@ -224,10 +227,10 @@ export function NowPlayingPage({ onNavigate }) {
 
 
       <div className={styles.progressSection}>
-        <ProgressBar value={currentTime} max={duration || 0} onSeek={seekTo} disabled={!duration} />
+        <ProgressBar value={safeCurrentTime} max={safeDuration} onSeek={seekTo} disabled={safeDuration <= 0} />
         <div className={styles.timeRow}>
           <span className={styles.time}>-{formatTime(remaining)}</span>
-          <span className={styles.time}>{formatTime(duration)}</span>
+          <span className={styles.time}>{formatTime(safeDuration)}</span>
         </div>
       </div>
 

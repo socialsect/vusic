@@ -18,6 +18,9 @@ export function AudioPlayer() {
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
+    audio.setAttribute('playsinline', '')
+    audio.setAttribute('webkit-playsinline', '')
+    audio.setAttribute('x-webkit-airplay', 'allow')
     audio.preload = 'auto'
   }, [])
 
@@ -69,13 +72,6 @@ export function AudioPlayer() {
     }
   }, [currentTrack, isPlaying, togglePlayPause, playNext, playPrevious])
 
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-    audio.setAttribute('playsinline', 'true')
-    audio.setAttribute('webkit-playsinline', 'true')
-    audio.setAttribute('x-webkit-airplay', 'allow')
-  }, [])
 
   return (
     <audio

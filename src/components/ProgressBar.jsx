@@ -50,7 +50,9 @@ export function ProgressBar({ value, max, onSeek, disabled }) {
     }
   }, [isDragging, getPercent, max, onSeek])
 
-  const percent = max > 0 ? (value / max) * 100 : 0
+  const safeMax = Number.isFinite(max) && max > 0 ? max : 0
+  const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0
+  const percent = safeMax > 0 ? Math.min(100, Math.max(0, (safeValue / safeMax) * 100)) : 0
 
   return (
     <div

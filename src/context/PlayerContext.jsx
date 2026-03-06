@@ -31,6 +31,7 @@ export function PlayerProvider({ children }) {
   const saveTimeIntervalRef = useRef(null)
   const loadTimeoutTimerRef = useRef(null)
   const errorRetryCountRef = useRef(0)
+  const shouldPlayRef = useRef(false)
 
   const [currentTrack, setCurrentTrackState] = useState(() => {
     try {
@@ -137,19 +138,16 @@ export function PlayerProvider({ children }) {
 
       const src = getStreamUrl(track.videoId)
       if (audioRef.current) {
-        audioRef.current.preload = 'auto'
-        audioRef.current.src = src
-        audioRef.current.load()
-        const shouldPlay = fromUserGesture || isPlaying
-        setIsPlaying(!!shouldPlay)
-        if (shouldPlay) {
-          audioRef.current.play().catch((e) => {
-            console.error('play error:', e)
-            setStreamError(true)
-            setBuffering(false)
-            setPreparingTrack(false)
-          })
-        }
+        setDuration(0)
+        setCurrentTime(0)
+        shouldPlayRef.current = fromUserGesture || isPlaying
+        setIsPlaying(!!shouldPlayRef.current)
+        const audio = audioRef.current
+        audio.pause()
+        audio.src = ''
+        audio.load()
+        audio.src = src
+        audio.load()
       }
     },
     [addToHistory, isPlaying]
@@ -176,16 +174,15 @@ export function PlayerProvider({ children }) {
 
       const src = getStreamUrl(track.videoId)
       if (audioRef.current) {
-        audioRef.current.preload = 'auto'
-        audioRef.current.src = src
-        audioRef.current.load()
-        if (wasPlaying) {
-          audioRef.current.play().catch((e) => {
-            setStreamError(true)
-            setBuffering(false)
-            setPreparingTrack(false)
-          })
-        }
+        setDuration(0)
+        setCurrentTime(0)
+        shouldPlayRef.current = !!wasPlaying
+        const audio = audioRef.current
+        audio.pause()
+        audio.src = ''
+        audio.load()
+        audio.src = src
+        audio.load()
       }
     },
     [addToHistory]
@@ -314,8 +311,21 @@ export function PlayerProvider({ children }) {
     const audio = audioRef.current
     if (!audio) return
 
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime)
-    const onDurationChange = () => setDuration(audio.duration)
+    const onLoadedMetadata = () => {
+      if (Number.isFinite(audio.duration) && !Number.isNaN(audio.duration)) {
+        setDuration(audio.duration)
+      }
+    }
+    const onTimeUpdate = () => {
+      if (Number.isFinite(audio.currentTime)) {
+        setCurrentTime(audio.currentTime)
+      }
+    }
+    const onDurationChange = () => {
+      if (Number.isFinite(audio.duration) && !Number.isNaN(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration)
+      }
+    }
     const onEnded = () => {
       setBuffering(false)
       setPreparingTrack(false)
@@ -340,6 +350,13 @@ export function PlayerProvider({ children }) {
       setBuffering(false)
       setPreparingTrack(false)
       setLoadTimeout(false)
+      if (shouldPlayRef.current) {
+        audio.play().catch((err) => {
+          console.warn('Play failed:', err)
+          setStreamError(true)
+          setPreparingTrack(false)
+        })
+      }
     }
     const onWaiting = () => setBuffering(true)
     const onError = () => {
@@ -379,6 +396,7 @@ export function PlayerProvider({ children }) {
       }
     }
 
+    audio.addEventListener('loadedmetadata', onLoadedMetadata)
     audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('durationchange', onDurationChange)
     audio.addEventListener('ended', onEnded)
@@ -387,6 +405,7 @@ export function PlayerProvider({ children }) {
     audio.addEventListener('error', onError)
 
     return () => {
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
       audio.removeEventListener('timeupdate', onTimeUpdate)
       audio.removeEventListener('durationchange', onDurationChange)
       audio.removeEventListener('ended', onEnded)
