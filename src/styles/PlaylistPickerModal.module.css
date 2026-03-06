@@ -1,0 +1,62 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal {
+  width: 100%;
+  max-width: 390px;
+  max-height: 60vh;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.title {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.list {
+  list-style: none;
+}
+
+.item {
+  width: 100%;
+  padding: 12px 0;
+  text-align: left;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.item:hover {
+  color: var(--accent);
+}
+
+.empty {
+  color: var(--muted);
+  padding: 20px 0;
+}
+
+.closeBtn {
+  margin-top: 16px;
+  padding: 10px;
+  width: 100%;
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.closeBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

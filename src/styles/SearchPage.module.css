@@ -1,0 +1,238 @@
+.page {
+  padding: 16px;
+  padding-bottom: 80px;
+}
+
+.searchWrap {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 14px 14px 44px;
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.chipsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.editChipsBtn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.editChipsBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chipEditorModal {
+  width: 90%;
+  max-width: 340px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.chipEditorModal h3 {
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+.chipEditorAdd {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chipEditorAdd input {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.chipEditorAdd button {
+  padding: 10px 16px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.chipEditorList {
+  list-style: none;
+  margin-bottom: 16px;
+}
+
+.chipEditorList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.chipEditorList li button {
+  color: var(--muted);
+}
+
+.chipEditorList li button:hover {
+  color: var(--error);
+}
+
+.resetChipsBtn {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+}
+
+.closeChipEditor {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.recent {
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  padding: 12px;
+  background: var(--surface);
+}
+
+.recentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.label {
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.clearBtn {
+  padding: 4px 8px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.clearBtn:hover {
+  color: var(--accent);
+}
+
+.recentList {
+  list-style: none;
+}
+
+.recentItem {
+  width: 100%;
+  padding: 10px 0;
+  text-align: left;
+  color: var(--text);
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.recentItem:last-child {
+  border-bottom: none;
+}
+
+.recentItem:hover {
+  color: var(--accent);
+}
+
+.results {
+  min-height: 200px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 40px 0;
+}

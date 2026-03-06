@@ -1,0 +1,37 @@
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.thumb {
+  aspect-ratio: 16 / 9;
+  background: var(--border);
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.line1 {
+  height: 14px;
+  width: 80%;
+  background: var(--border);
+  animation: shimmer 1.5s ease-in-out infinite 0.2s;
+}
+
+.line2 {
+  height: 12px;
+  width: 50%;
+  background: var(--border);
+  animation: shimmer 1.5s ease-in-out infinite 0.4s;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}

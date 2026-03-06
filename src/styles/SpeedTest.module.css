@@ -1,0 +1,58 @@
+.speedTest {
+  padding: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.runBtn,
+.retryBtn {
+  padding: 10px 20px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+
+.runBtn:hover,
+.retryBtn:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.running {
+  color: var(--accent);
+  font-size: 0.9rem;
+  padding: 12px 0;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.speed {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.error {
+  color: var(--error);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}

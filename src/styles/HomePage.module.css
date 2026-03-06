@@ -1,0 +1,155 @@
+.page {
+  padding: 16px;
+  padding-bottom: 80px;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.greeting {
+  font-size: 1.5rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.section {
+  margin-bottom: 28px;
+}
+
+.sectionTitle {
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding-left: 12px;
+  border-left: 4px solid var(--accent);
+  margin-bottom: 12px;
+}
+
+.hScroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.hScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.continueCard {
+  flex-shrink: 0;
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  background: none;
+  border: 1px solid var(--border);
+  padding: 0;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.continueCard:hover {
+  border-color: var(--accent);
+}
+
+.continueCard img {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.continueTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  padding: 0 8px 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.madeForYou {
+  display: block;
+  width: 100%;
+  padding: 32px;
+  background: linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 70%, #0a0a0a) 100%);
+  border: 1px solid var(--accent);
+  text-align: left;
+  transition: filter 0.15s ease;
+}
+
+.madeForYou:hover {
+  filter: brightness(1.1);
+}
+
+.madeTitle {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--bg);
+  margin-bottom: 4px;
+}
+
+.madeSub {
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--bg) 80%, transparent);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recentRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+}
+
+.recentRow:hover {
+  border-color: var(--accent);
+}
+
+.recentCard {
+  flex: 1;
+  min-width: 0;
+}
+
+.recentCard button {
+  width: 100%;
+  border: none;
+}
+
+.heartBtn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.heartBtn:hover,
+.heartBtn.liked {
+  color: var(--accent);
+}
+
+.empty {
+  color: var(--muted);
+  padding: 24px 0;
+}
