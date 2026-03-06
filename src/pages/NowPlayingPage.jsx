@@ -65,7 +65,6 @@ export function NowPlayingPage({ onNavigate }) {
     setVolume,
     setLoop,
     setShuffle,
-    setIsPlaying,
     playNext,
     playPrevious,
     setStreamError,
@@ -244,16 +243,7 @@ export function NowPlayingPage({ onNavigate }) {
         <button
           type="button"
           className={`${styles.ctrlBtn} ${styles.playBtn}`}
-          onClick={() => {
-            if (isPlaying) {
-              togglePlayPause()
-            } else {
-              if (audioRef.current) {
-                audioRef.current.play()
-                setIsPlaying(true)
-              }
-            }
-          }}
+          onClick={togglePlayPause}
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {preparingTrack && !isPlaying ? (

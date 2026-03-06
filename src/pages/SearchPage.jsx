@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Search as SearchIcon } from 'lucide-react'
 import { useDebounce } from '../hooks/useDebounce'
 import { useLocalStorage } from '../hooks/useLocalStorage'
@@ -24,6 +24,7 @@ export function SearchPage({ onNavigate }) {
   const [chips, setChips] = useLocalStorage(CHIPS_KEY, DEFAULT_CHIPS)
   const debouncedQuery = useDebounce(query, 500)
   const { playTrack } = usePlayer()
+  const doSearchRef = useRef(() => {})
 
   const doSearch = (q) => {
     if (!q?.trim()) {
@@ -48,8 +49,14 @@ export function SearchPage({ onNavigate }) {
       .finally(() => setLoading(false))
   }
 
+  doSearchRef.current = doSearch
+
   useEffect(() => {
-    const handler = (e) => setQuery(e.detail || '')
+    const handler = (e) => {
+      const q = e.detail || ''
+      setQuery(q)
+      if (q?.trim()) doSearchRef.current(q.trim())
+    }
     window.addEventListener('vusic-search', handler)
     return () => window.removeEventListener('vusic-search', handler)
   }, [])

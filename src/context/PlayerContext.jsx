@@ -32,6 +32,7 @@ export function PlayerProvider({ children }) {
   const loadTimeoutTimerRef = useRef(null)
   const errorRetryCountRef = useRef(0)
   const shouldPlayRef = useRef(false)
+  const prefetchedRef = useRef(new Set())
 
   const [currentTrack, setCurrentTrackState] = useState(() => {
     try {
@@ -127,6 +128,7 @@ export function PlayerProvider({ children }) {
       setDuration(0)
       errorRetryCountRef.current = 0
       if (Array.isArray(newQueue)) {
+        prefetchedRef.current = new Set()
         setQueue(newQueue)
         setQueueIndex(index >= 0 && index < newQueue.length ? index : 0)
       }
@@ -141,7 +143,6 @@ export function PlayerProvider({ children }) {
         setDuration(0)
         setCurrentTime(0)
         shouldPlayRef.current = fromUserGesture || isPlaying
-        setIsPlaying(!!shouldPlayRef.current)
         const audio = audioRef.current
         audio.pause()
         audio.src = ''
@@ -163,12 +164,12 @@ export function PlayerProvider({ children }) {
       setDuration(0)
       errorRetryCountRef.current = 0
       if (Array.isArray(newQueue)) {
+        prefetchedRef.current = new Set()
         setQueue(newQueue)
         setQueueIndex(index >= 0 && index < newQueue.length ? index : 0)
       }
       addToHistory(track)
       setPreparingTrack(true)
-      setIsPlaying(!!wasPlaying)
       if (loadTimeoutTimerRef.current) clearTimeout(loadTimeoutTimerRef.current)
       loadTimeoutTimerRef.current = setTimeout(() => setLoadTimeout(true), 30000)
 
@@ -207,7 +208,6 @@ export function PlayerProvider({ children }) {
       } else {
         audioRef.current.play().catch(() => {})
       }
-      setIsPlaying(!isPlaying)
     }
   }, [currentTrack, isPlaying])
 
@@ -234,8 +234,38 @@ export function PlayerProvider({ children }) {
     } catch {}
   }, [])
 
+  const fetchMoreByArtist = useCallback(async (artistName) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/search?q=${encodeURIComponent(artistName)}`)
+      const data = await res.json()
+      const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
+      const historyIds = new Set(history.map((t) => t.videoId))
+      const newTracks = (data.items || []).filter((t) => t.videoId && !historyIds.has(t.videoId))
+      return newTracks
+    } catch {
+      return []
+    }
+  }, [])
+
   const playNext = useCallback(() => {
-    if (queue.length === 0) return
+    if (queue.length === 0) return false
+    const atEnd = queueIndex >= queue.length - 1
+    if (!loop && !shuffle && atEnd) {
+      const artist = currentTrack?.channel
+      if (!artist) return false
+      toast(`LOADING MORE FROM ${artist.toUpperCase()}`)
+      fetchMoreByArtist(artist).then((newTracks) => {
+        const queueIds = new Set(queue.map((t) => t.videoId))
+        const filtered = newTracks.filter((t) => !queueIds.has(t.videoId))
+        if (filtered.length > 0) {
+          const newQueue = [...queue, ...filtered]
+          setQueue(newQueue)
+          setQueueIndex(queue.length)
+          playTrackWithPlayingState(filtered[0], newQueue, queue.length, true)
+        }
+      })
+      return true
+    }
     let nextIndex
     if (shuffle) {
       nextIndex = Math.floor(Math.random() * queue.length)
@@ -246,7 +276,7 @@ export function PlayerProvider({ children }) {
     const nextTrack = queue[nextIndex]
     if (nextTrack) playTrackWithPlayingState(nextTrack, queue, nextIndex, true)
     return !!nextTrack
-  }, [queue, queueIndex, loop, shuffle, playTrackWithPlayingState])
+  }, [queue, queueIndex, loop, shuffle, currentTrack, playTrackWithPlayingState, toast, fetchMoreByArtist])
 
   const playPrevious = useCallback(() => {
     if (currentTime > 3 && audioRef.current) {
@@ -292,6 +322,19 @@ export function PlayerProvider({ children }) {
   }, [currentTrack, queue, queueIndex, preloadNextTrack])
 
   useEffect(() => {
+    if (queue.length < 2 || queueIndex !== queue.length - 2 || !currentTrack?.channel) return
+    fetchMoreByArtist(currentTrack.channel).then((newTracks) => {
+      if (newTracks.length === 0) return
+      setQueue((prev) => {
+        const ids = new Set(prev.map((t) => t.videoId))
+        const filtered = newTracks.filter((t) => t.videoId && !ids.has(t.videoId))
+        if (filtered.length === 0) return prev
+        return [...prev, ...filtered]
+      })
+    })
+  }, [queueIndex, queue.length, currentTrack?.channel, fetchMoreByArtist])
+
+  useEffect(() => {
     if (sleepTimerSeconds <= 0) return
     const id = setInterval(() => {
       setSleepTimerSeconds((s) => {
@@ -320,28 +363,68 @@ export function PlayerProvider({ children }) {
       if (Number.isFinite(audio.currentTime)) {
         setCurrentTime(audio.currentTime)
       }
+      if ('mediaSession' in navigator && Number.isFinite(audio.duration) && audio.duration > 0) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: audio.duration,
+            playbackRate: audio.playbackRate || 1,
+            position: Number.isFinite(audio.currentTime) ? audio.currentTime : 0
+          })
+        } catch (_) {}
+      }
+      const currentQuality = getQuality()
+      if (audio.currentTime > 15 && queue.length > 0 && queueIndex < queue.length - 1) {
+        const nextTrack = queue[queueIndex + 1]
+        if (nextTrack && !prefetchedRef.current.has(nextTrack.videoId)) {
+          prefetchedRef.current.add(nextTrack.videoId)
+          console.log('[prefetch] warming cache for:', nextTrack.title)
+          fetch(`${BASE_URL}/api/prefetch/${nextTrack.videoId}?quality=${currentQuality}`).catch(() => {})
+        }
+      }
+      if (audio.currentTime > 60 && queue.length > 0 && queueIndex < queue.length - 2) {
+        const twoAhead = queue[queueIndex + 2]
+        if (twoAhead && !prefetchedRef.current.has(twoAhead.videoId)) {
+          prefetchedRef.current.add(twoAhead.videoId)
+          fetch(`${BASE_URL}/api/prefetch/${twoAhead.videoId}?quality=${currentQuality}`).catch(() => {})
+        }
+      }
     }
     const onDurationChange = () => {
       if (Number.isFinite(audio.duration) && !Number.isNaN(audio.duration) && audio.duration > 0) {
         setDuration(audio.duration)
       }
     }
+    const handleTrackEndOrNext = () => {
+      if (queueIndex + 1 < queue.length) {
+        const next = queue[queueIndex + 1]
+        playTrackWithPlayingState(next, queue, queueIndex + 1, true)
+        return
+      }
+      const artist = currentTrack?.channel
+      if (!artist) return
+      toast(`LOADING MORE FROM ${artist.toUpperCase()}`)
+      fetchMoreByArtist(artist).then((newTracks) => {
+        const queueIds = new Set(queue.map((t) => t.videoId))
+        const filtered = newTracks.filter((t) => !queueIds.has(t.videoId))
+        if (filtered.length > 0) {
+          const newQueue = [...queue, ...filtered]
+          setQueue(newQueue)
+          setQueueIndex(queue.length)
+          playTrackWithPlayingState(filtered[0], newQueue, queue.length, true)
+        }
+      })
+    }
+
     const onEnded = () => {
       setBuffering(false)
       setPreparingTrack(false)
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'
+      setIsPlaying(false)
       if (loop && currentTrack) {
         audio.currentTime = 0
         audio.play()
-      } else if (queue.length > 0) {
-        const nextIdx = shuffle
-          ? Math.floor(Math.random() * queue.length)
-          : queueIndex >= queue.length - 1
-            ? 0
-            : queueIndex + 1
-        const next = queue[nextIdx]
-        if (next) playTrackWithPlayingState(next, queue, nextIdx, true)
       } else {
-        setIsPlaying(false)
+        handleTrackEndOrNext()
       }
     }
     const onCanPlay = () => {
@@ -357,6 +440,32 @@ export function PlayerProvider({ children }) {
           setPreparingTrack(false)
         })
       }
+    }
+    const onPlaying = () => {
+      setIsPlaying(true)
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing'
+        if (currentTrack) {
+          const thumb = currentTrack.thumbnail || ''
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: currentTrack.title || 'Unknown',
+            artist: currentTrack.channel || 'Unknown',
+            album: 'Vusic',
+            artwork: thumb ? [
+              { src: thumb, sizes: '96x96', type: 'image/jpeg' },
+              { src: thumb, sizes: '128x128', type: 'image/jpeg' },
+              { src: thumb, sizes: '192x192', type: 'image/jpeg' },
+              { src: thumb, sizes: '256x256', type: 'image/jpeg' },
+              { src: thumb, sizes: '384x384', type: 'image/jpeg' },
+              { src: thumb, sizes: '512x512', type: 'image/jpeg' }
+            ] : []
+          })
+        }
+      }
+    }
+    const onPause = () => {
+      setIsPlaying(false)
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'
     }
     const onWaiting = () => setBuffering(true)
     const onError = () => {
@@ -396,11 +505,51 @@ export function PlayerProvider({ children }) {
       }
     }
 
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (audioRef.current) {
+          audioRef.current.play()
+          setIsPlaying(true)
+          navigator.mediaSession.playbackState = 'playing'
+        }
+      })
+      navigator.mediaSession.setActionHandler('pause', () => {
+        if (audioRef.current) {
+          audioRef.current.pause()
+          setIsPlaying(false)
+          navigator.mediaSession.playbackState = 'paused'
+        }
+      })
+      navigator.mediaSession.setActionHandler('nexttrack', () => playNext())
+      navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious())
+      navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+        if (audioRef.current) {
+          const skipTime = details.seekOffset || 10
+          audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - skipTime)
+        }
+      })
+      navigator.mediaSession.setActionHandler('seekforward', (details) => {
+        if (audioRef.current) {
+          const skipTime = details.seekOffset || 10
+          const d = audioRef.current.duration
+          const max = Number.isFinite(d) && d > 0 ? d : 0
+          audioRef.current.currentTime = Math.min(max, audioRef.current.currentTime + skipTime)
+        }
+      })
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (audioRef.current && details.seekTime !== undefined) {
+          audioRef.current.currentTime = details.seekTime
+        }
+      })
+    }
+
     audio.addEventListener('loadedmetadata', onLoadedMetadata)
     audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('durationchange', onDurationChange)
     audio.addEventListener('ended', onEnded)
     audio.addEventListener('canplay', onCanPlay)
+    audio.addEventListener('playing', onPlaying)
+    audio.addEventListener('pause', onPause)
     audio.addEventListener('waiting', onWaiting)
     audio.addEventListener('error', onError)
 
@@ -410,10 +559,45 @@ export function PlayerProvider({ children }) {
       audio.removeEventListener('durationchange', onDurationChange)
       audio.removeEventListener('ended', onEnded)
       audio.removeEventListener('canplay', onCanPlay)
+      audio.removeEventListener('playing', onPlaying)
+      audio.removeEventListener('pause', onPause)
       audio.removeEventListener('waiting', onWaiting)
       audio.removeEventListener('error', onError)
     }
-  }, [currentTrack, loop, shuffle, queue, queueIndex, playTrackWithPlayingState, playNext, toast])
+  }, [currentTrack, loop, shuffle, queue, queueIndex, playTrackWithPlayingState, playNext, playPrevious, toast, fetchMoreByArtist])
+
+  useEffect(() => {
+    async function warmCache() {
+      try {
+        const liked = JSON.parse(localStorage.getItem('vusic_library') || '[]')
+        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
+        const seen = new Set()
+        const toCache = []
+        for (const track of [...liked, ...history]) {
+          if (track.videoId && !seen.has(track.videoId)) {
+            seen.add(track.videoId)
+            toCache.push(track)
+          }
+        }
+        const toWarm = toCache.slice(0, 10)
+        console.log(`[warmCache] pre-caching ${toWarm.length} tracks`)
+        const currentQuality = getQuality()
+        for (let i = 0; i < toWarm.length; i++) {
+          await new Promise((resolve) => setTimeout(resolve, 2000))
+          const track = toWarm[i]
+          fetch(`${BASE_URL}/api/prefetch/${track.videoId}?quality=${currentQuality}`)
+            .then(() => console.log(`[warmCache] cached: ${track.title}`))
+            .catch(() => {})
+        }
+      } catch (err) {
+        console.error('[warmCache] error:', err)
+      }
+    }
+    const timer = setTimeout(() => {
+      warmCache()
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -426,6 +610,7 @@ export function PlayerProvider({ children }) {
         const savedTimeRaw = localStorage.getItem(CURRENT_TIME_KEY)
         const savedTime = savedTimeRaw != null ? parseFloat(savedTimeRaw) : 0
         if (savedTrack?.videoId) {
+          setIsPlaying(false)
           const src = getStreamUrl(savedTrack.videoId)
           audio.src = src
           audio.load()
