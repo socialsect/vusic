@@ -9,7 +9,6 @@ import { PlaylistPickerModal } from '../components/PlaylistPickerModal'
 import styles from '../styles/SearchPage.module.css'
 
 const BASE_URL = 'https://vusic-backend-production.up.railway.app'
-const RECENT_KEY = 'vusic_recent_searches'
 const CHIPS_KEY = 'vusic_search_chips'
 const DEFAULT_CHIPS = ['HIP HOP', 'POP', 'ROCK', 'LOFI', 'JAZZ', 'ELECTRONIC', 'TRENDING']
 
@@ -18,12 +17,11 @@ export function SearchPage({ onNavigate }) {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [showRecent, setShowRecent] = useState(false)
-  const [recentSearches, setRecentSearches] = useLocalStorage(RECENT_KEY, [])
   const [playlistModalTrack, setPlaylistModalTrack] = useState(null)
   const [showChipEditor, setShowChipEditor] = useState(false)
   const [chips, setChips] = useLocalStorage(CHIPS_KEY, DEFAULT_CHIPS)
   const debouncedQuery = useDebounce(query, 500)
-  const { playTrack } = usePlayer()
+  const { playTrack, recentHistory, clearHistory } = usePlayer()
   const doSearchRef = useRef(() => {})
 
   const doSearch = (q) => {
@@ -38,12 +36,6 @@ export function SearchPage({ onNavigate }) {
       .then((data) => {
         const items = data.items || []
         setResults(items)
-        if (items.length > 0) {
-          setRecentSearches((prev) => {
-            const filtered = prev.filter((s) => s !== q.trim())
-            return [q.trim(), ...filtered].slice(0, 10)
-          })
-        }
       })
       .catch(() => setResults([]))
       .finally(() => setLoading(false))
@@ -80,13 +72,16 @@ export function SearchPage({ onNavigate }) {
     doSearch(chip)
   }
 
-  const handleRecentClick = (s) => {
-    setQuery(s)
+  const handleRecentTrackClick = (track) => {
+    const idx = recentHistory.findIndex((t) => t.videoId === track.videoId)
+    const queue = recentHistory
+    const index = idx >= 0 ? idx : 0
+    playTrack(track, queue, index, true)
     setShowRecent(false)
-    doSearch(s)
+    onNavigate?.('nowplaying')
   }
 
-  const clearRecent = () => setRecentSearches([])
+  const clearRecent = () => clearHistory()
 
   return (
     <div className={styles.page}>
@@ -126,23 +121,27 @@ export function SearchPage({ onNavigate }) {
         </button>
       </div>
 
-      {showRecent && !query && recentSearches.length > 0 && (
+      {showRecent && !query && recentHistory.length > 0 && (
         <div className={styles.recent}>
           <div className={styles.recentHeader}>
-            <span className={styles.label}>RECENT SEARCHES</span>
+            <span className={styles.label}>RECENTLY PLAYED</span>
             <button type="button" className={styles.clearBtn} onClick={clearRecent}>
               ✕
             </button>
           </div>
           <ul className={styles.recentList}>
-            {recentSearches.map((s) => (
-              <li key={s}>
+            {recentHistory.slice(0, 10).map((track) => (
+              <li key={track.videoId}>
                 <button
                   type="button"
-                  className={styles.recentItem}
-                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleRecentClick(s) }}
+                  className={styles.recentTrackItem}
+                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleRecentTrackClick(track) }}
                 >
-                  {s}
+                  <img src={track.thumbnail || ''} alt="" className={styles.recentThumb} />
+                  <div className={styles.recentTrackInfo}>
+                    <span className={styles.recentTrackTitle}>{track.title || 'Unknown'}</span>
+                    <span className={styles.recentTrackChannel}>{track.channel || 'Unknown'}</span>
+                  </div>
                 </button>
               </li>
             ))}

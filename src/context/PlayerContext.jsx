@@ -522,20 +522,8 @@ export function PlayerProvider({ children }) {
       })
       navigator.mediaSession.setActionHandler('nexttrack', () => playNext())
       navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious())
-      navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-        if (audioRef.current) {
-          const skipTime = details.seekOffset || 10
-          audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - skipTime)
-        }
-      })
-      navigator.mediaSession.setActionHandler('seekforward', (details) => {
-        if (audioRef.current) {
-          const skipTime = details.seekOffset || 10
-          const d = audioRef.current.duration
-          const max = Number.isFinite(d) && d > 0 ? d : 0
-          audioRef.current.currentTime = Math.min(max, audioRef.current.currentTime + skipTime)
-        }
-      })
+      navigator.mediaSession.setActionHandler('seekbackward', () => playPrevious())
+      navigator.mediaSession.setActionHandler('seekforward', () => playNext())
       navigator.mediaSession.setActionHandler('seekto', (details) => {
         if (audioRef.current && details.seekTime !== undefined) {
           audioRef.current.currentTime = details.seekTime
