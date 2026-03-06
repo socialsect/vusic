@@ -195,6 +195,11 @@ export function NowPlayingPage({ onNavigate }) {
         <MoreVertical size={24} />
       </button>
 
+      <div className={styles.vLogoWrap} aria-hidden="true">
+        <div className={styles.vLogoStroke} />
+        <div className={styles.vLogoStroke} />
+      </div>
+
       <div className={styles.thumbWrap}>
         <img src={currentTrack.thumbnail} alt="" className={styles.thumb} />
         <div className={styles.scanline} aria-hidden="true" />

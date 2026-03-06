@@ -123,13 +123,65 @@
   font-size: 0.9rem;
 }
 
-.thumbWrap {
+/* V logo — theme-matched break animation */
+.vLogoWrap {
   position: relative;
-  width: 100%;
-  max-width: 280px;
-  aspect-ratio: 1;
-  margin-bottom: 24px;
-  overflow: hidden;
+  width: 32px;
+  height: 28px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.vLogoStroke {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 24px;
+  background: var(--accent);
+  border-radius: 2px;
+  transform-origin: bottom center;
+  animation: vBreak 2.5s ease-in-out infinite;
+}
+
+.vLogoStroke:first-child {
+  left: 50%;
+  transform: translateX(-50%) rotate(-28deg);
+  animation-delay: 0s;
+}
+
+.vLogoStroke:last-child {
+  left: 50%;
+  transform: translateX(-50%) rotate(28deg);
+}
+
+.vLogoStroke:first-child {
+  animation-name: vBreakLeft;
+}
+
+.vLogoStroke:last-child {
+  animation-name: vBreakRight;
+}
+
+@keyframes vBreakLeft {
+  0%, 40%, 60%, 100% {
+    transform: translateX(-50%) rotate(-28deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(calc(-50% - 8px)) rotate(-38deg);
+    opacity: 0.85;
+  }
+}
+
+@keyframes vBreakRight {
+  0%, 40%, 60%, 100% {
+    transform: translateX(-50%) rotate(28deg);
+  }
+  50% {
+    transform: translateX(calc(-50% + 8px)) rotate(38deg);
+  }
 }
 
 .thumb {

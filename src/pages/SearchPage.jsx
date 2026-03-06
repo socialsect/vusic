@@ -65,12 +65,31 @@ export function SearchPage({ onNavigate }) {
   }, [debouncedQuery])
 
   const handleTrackClick = (track) => {
-    playTrack(track, results, results.findIndex((t) => t.videoId === track.videoId), true)
     setRecentSearchPlayed((prev) => {
       const filtered = (prev || []).filter((t) => t.videoId !== track.videoId)
       const next = [track, ...filtered].slice(0, 20)
       return next
     })
+    const artistName = track.channel?.trim()
+    if (artistName) {
+      fetch(`${BASE_URL}/api/search?q=${encodeURIComponent(artistName)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          const items = data.items || []
+          const artistLower = artistName.toLowerCase()
+          const sameArtist = items.filter(
+            (t) => t.videoId && String(t.channel || '').trim().toLowerCase() === artistLower
+          )
+          const rest = sameArtist.filter((t) => t.videoId !== track.videoId)
+          const queue = [track, ...rest]
+          playTrack(track, queue, 0, true)
+        })
+        .catch(() => {
+          playTrack(track, results, results.findIndex((t) => t.videoId === track.videoId), true)
+        })
+    } else {
+      playTrack(track, results, results.findIndex((t) => t.videoId === track.videoId), true)
+    }
     onNavigate?.('nowplaying')
   }
 
