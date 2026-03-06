@@ -4,6 +4,9 @@ import { useToast } from './ToastContext'
 const BASE_URL = 'https://vusic-backend-production.up.railway.app'
 const HISTORY_KEY = 'vusic_history'
 const SETTINGS_KEY = 'vusic_settings'
+const CURRENT_TRACK_KEY = 'vusic_current_track'
+const CURRENT_TIME_KEY = 'vusic_current_time'
+const QUEUE_KEY = 'vusic_queue'
 
 function getQuality() {
   try {
@@ -14,7 +17,7 @@ function getQuality() {
   }
 }
 
-function getStreamUrl(videoId) {
+export function getStreamUrl(videoId) {
   const q = getQuality()
   return `${BASE_URL}/api/stream/${videoId}?quality=${q}`
 }
@@ -25,11 +28,36 @@ export function PlayerProvider({ children }) {
   const toast = useToast()
   const audioRef = useRef(null)
   const preloadRef = useRef(null)
-  const [currentTrack, setCurrentTrack] = useState(null)
-  const [queue, setQueue] = useState([])
+  const saveTimeIntervalRef = useRef(null)
+  const loadTimeoutTimerRef = useRef(null)
+  const errorRetryCountRef = useRef(0)
+
+  const [currentTrack, setCurrentTrackState] = useState(() => {
+    try {
+      const raw = localStorage.getItem(CURRENT_TRACK_KEY)
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  })
+  const [queue, setQueue] = useState(() => {
+    try {
+      const raw = localStorage.getItem(QUEUE_KEY)
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  })
   const [queueIndex, setQueueIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
+  const [currentTime, setCurrentTime] = useState(() => {
+    try {
+      const t = localStorage.getItem(CURRENT_TIME_KEY)
+      return t != null ? parseFloat(t) : 0
+    } catch {
+      return 0
+    }
+  })
   const [duration, setDuration] = useState(0)
   const [volume, setVolumeState] = useState(() => {
     try {
@@ -43,6 +71,9 @@ export function PlayerProvider({ children }) {
   const [shuffle, setShuffle] = useState(false)
   const [buffering, setBuffering] = useState(false)
   const [streamError, setStreamError] = useState(false)
+  const [preparingTrack, setPreparingTrack] = useState(false)
+  const [loadTimeout, setLoadTimeout] = useState(false)
+  const [welcomeBack, setWelcomeBack] = useState(false)
   const [sleepTimerSeconds, setSleepTimerSeconds] = useState(0)
   const [recentHistory, setRecentHistory] = useState(() => {
     try {
@@ -86,30 +117,75 @@ export function PlayerProvider({ children }) {
   }, [queue, queueIndex])
 
   const playTrack = useCallback(
-    (track, newQueue = null, index = 0) => {
+    (track, newQueue = null, index = 0, fromUserGesture = false) => {
       if (!track?.videoId) return
-      setCurrentTrack(track)
+      setCurrentTrackState(track)
       setStreamError(false)
-      setBuffering(true)
+      setLoadTimeout(false)
       setCurrentTime(0)
       setDuration(0)
+      errorRetryCountRef.current = 0
       if (Array.isArray(newQueue)) {
         setQueue(newQueue)
         setQueueIndex(index >= 0 && index < newQueue.length ? index : 0)
       }
       addToHistory(track)
-      setIsPlaying(true)
+      setPreparingTrack(true)
+      setWelcomeBack(false)
+      if (loadTimeoutTimerRef.current) clearTimeout(loadTimeoutTimerRef.current)
+      loadTimeoutTimerRef.current = setTimeout(() => setLoadTimeout(true), 30000)
 
       const src = getStreamUrl(track.videoId)
       if (audioRef.current) {
         audioRef.current.preload = 'auto'
         audioRef.current.src = src
         audioRef.current.load()
-        audioRef.current.play().catch((e) => {
-          console.error('play error:', e)
-          setStreamError(true)
-          setBuffering(false)
-        })
+        const shouldPlay = fromUserGesture || isPlaying
+        setIsPlaying(!!shouldPlay)
+        if (shouldPlay) {
+          audioRef.current.play().catch((e) => {
+            console.error('play error:', e)
+            setStreamError(true)
+            setBuffering(false)
+            setPreparingTrack(false)
+          })
+        }
+      }
+    },
+    [addToHistory, isPlaying]
+  )
+
+  const playTrackWithPlayingState = useCallback(
+    (track, newQueue, index, wasPlaying) => {
+      if (!track?.videoId) return
+      setCurrentTrackState(track)
+      setStreamError(false)
+      setLoadTimeout(false)
+      setCurrentTime(0)
+      setDuration(0)
+      errorRetryCountRef.current = 0
+      if (Array.isArray(newQueue)) {
+        setQueue(newQueue)
+        setQueueIndex(index >= 0 && index < newQueue.length ? index : 0)
+      }
+      addToHistory(track)
+      setPreparingTrack(true)
+      setIsPlaying(!!wasPlaying)
+      if (loadTimeoutTimerRef.current) clearTimeout(loadTimeoutTimerRef.current)
+      loadTimeoutTimerRef.current = setTimeout(() => setLoadTimeout(true), 30000)
+
+      const src = getStreamUrl(track.videoId)
+      if (audioRef.current) {
+        audioRef.current.preload = 'auto'
+        audioRef.current.src = src
+        audioRef.current.load()
+        if (wasPlaying) {
+          audioRef.current.play().catch((e) => {
+            setStreamError(true)
+            setBuffering(false)
+            setPreparingTrack(false)
+          })
+        }
       }
     },
     [addToHistory]
@@ -117,8 +193,14 @@ export function PlayerProvider({ children }) {
 
   const jumpToQueueIndex = useCallback((idx) => {
     const track = queue[idx]
-    if (track) playTrack(track, queue, idx)
-  }, [queue, playTrack])
+    if (track) playTrackWithPlayingState(track, queue, idx, isPlaying)
+  }, [queue, playTrackWithPlayingState, isPlaying])
+
+  const playAudioDirect = useCallback(() => {
+    if (audioRef.current && currentTrack) {
+      audioRef.current.play().catch(() => {})
+    }
+  }, [currentTrack])
 
   const togglePlayPause = useCallback(() => {
     if (!audioRef.current) return
@@ -126,7 +208,7 @@ export function PlayerProvider({ children }) {
       if (isPlaying) {
         audioRef.current.pause()
       } else {
-        audioRef.current.play()
+        audioRef.current.play().catch(() => {})
       }
       setIsPlaying(!isPlaying)
     }
@@ -165,9 +247,9 @@ export function PlayerProvider({ children }) {
       if (!loop && nextIndex === queueIndex && queueIndex < queue.length - 1) nextIndex = queueIndex + 1
     }
     const nextTrack = queue[nextIndex]
-    if (nextTrack) playTrack(nextTrack, queue, nextIndex)
+    if (nextTrack) playTrackWithPlayingState(nextTrack, queue, nextIndex, true)
     return !!nextTrack
-  }, [queue, queueIndex, loop, shuffle, playTrack])
+  }, [queue, queueIndex, loop, shuffle, playTrackWithPlayingState])
 
   const playPrevious = useCallback(() => {
     if (currentTime > 3 && audioRef.current) {
@@ -178,12 +260,35 @@ export function PlayerProvider({ children }) {
     if (queue.length === 0) return
     const prevIndex = Math.max(0, queueIndex - 1)
     const prevTrack = queue[prevIndex]
-    if (prevTrack) playTrack(prevTrack, queue, prevIndex)
-  }, [queue, queueIndex, currentTime, playTrack])
+    if (prevTrack) playTrackWithPlayingState(prevTrack, queue, prevIndex, true)
+  }, [queue, queueIndex, currentTime, playTrackWithPlayingState])
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume
   }, [volume])
+
+  useEffect(() => {
+    if (currentTrack) {
+      try {
+        localStorage.setItem(CURRENT_TRACK_KEY, JSON.stringify(currentTrack))
+      } catch (_) {}
+    }
+  }, [currentTrack])
+
+  useEffect(() => {
+    saveTimeIntervalRef.current = setInterval(() => {
+      if (audioRef.current && currentTrack) {
+        const t = audioRef.current.currentTime
+        setCurrentTime(t)
+        try {
+          localStorage.setItem(CURRENT_TIME_KEY, String(t))
+          localStorage.setItem(QUEUE_KEY, JSON.stringify(queue))
+          localStorage.setItem('vusic_was_playing', isPlaying ? '1' : '0')
+        } catch (_) {}
+      }
+    }, 5000)
+    return () => clearInterval(saveTimeIntervalRef.current)
+  }, [currentTrack, queue, isPlaying])
 
   useEffect(() => {
     preloadNextTrack()
@@ -213,6 +318,7 @@ export function PlayerProvider({ children }) {
     const onDurationChange = () => setDuration(audio.duration)
     const onEnded = () => {
       setBuffering(false)
+      setPreparingTrack(false)
       if (loop && currentTrack) {
         audio.currentTime = 0
         audio.play()
@@ -223,23 +329,53 @@ export function PlayerProvider({ children }) {
             ? 0
             : queueIndex + 1
         const next = queue[nextIdx]
-        if (next) playTrack(next, queue, nextIdx)
+        if (next) playTrackWithPlayingState(next, queue, nextIdx, true)
       } else {
         setIsPlaying(false)
       }
     }
-    const onCanPlay = () => setBuffering(false)
+    const onCanPlay = () => {
+      if (loadTimeoutTimerRef.current) clearTimeout(loadTimeoutTimerRef.current)
+      loadTimeoutTimerRef.current = null
+      setBuffering(false)
+      setPreparingTrack(false)
+      setLoadTimeout(false)
+    }
     const onWaiting = () => setBuffering(true)
     const onError = () => {
       setBuffering(false)
-      const hasNext = queue.length > 0 && (shuffle || queueIndex < queue.length - 1 || loop)
-      if (hasNext) {
-        toast('TRACK UNAVAILABLE — SKIPPING')
-        const didSkip = playNext()
-        if (didSkip) setStreamError(false)
-        else setStreamError(true)
+      if (loadTimeoutTimerRef.current) clearTimeout(loadTimeoutTimerRef.current)
+      loadTimeoutTimerRef.current = null
+      setLoadTimeout(false)
+      const code = audio.error?.code
+      if (errorRetryCountRef.current < 1 && (code === 2 || code === 4)) {
+        errorRetryCountRef.current += 1
+        setTimeout(() => {
+          audio.load()
+          audio.play().catch(() => {
+            const hasNext = queue.length > 0 && (shuffle || queueIndex < queue.length - 1 || loop)
+            if (hasNext) {
+              toast('TRACK UNAVAILABLE — SKIPPING')
+              const didSkip = playNext()
+              if (didSkip) setStreamError(false)
+              else setStreamError(true)
+            } else {
+              setStreamError(true)
+            }
+            setPreparingTrack(false)
+          })
+        }, 1000)
       } else {
-        setStreamError(true)
+        const hasNext = queue.length > 0 && (shuffle || queueIndex < queue.length - 1 || loop)
+        if (hasNext) {
+          toast('TRACK UNAVAILABLE — SKIPPING')
+          const didSkip = playNext()
+          if (didSkip) setStreamError(false)
+          else setStreamError(true)
+        } else {
+          setStreamError(true)
+        }
+        setPreparingTrack(false)
       }
     }
 
@@ -258,7 +394,37 @@ export function PlayerProvider({ children }) {
       audio.removeEventListener('waiting', onWaiting)
       audio.removeEventListener('error', onError)
     }
-  }, [currentTrack, loop, shuffle, queue, queueIndex, playTrack, playNext, toast])
+  }, [currentTrack, loop, shuffle, queue, queueIndex, playTrackWithPlayingState, playNext, toast])
+
+  useEffect(() => {
+    let mounted = true
+    const run = () => {
+      const audio = audioRef.current
+      if (!audio || !mounted) return
+      try {
+        const raw = localStorage.getItem(CURRENT_TRACK_KEY)
+        const savedTrack = raw ? JSON.parse(raw) : null
+        const savedTimeRaw = localStorage.getItem(CURRENT_TIME_KEY)
+        const savedTime = savedTimeRaw != null ? parseFloat(savedTimeRaw) : 0
+        if (savedTrack?.videoId) {
+          const src = getStreamUrl(savedTrack.videoId)
+          audio.src = src
+          audio.load()
+          const applyTime = () => {
+            if (mounted && audioRef.current && !isNaN(audioRef.current.duration)) {
+              audioRef.current.currentTime = savedTime
+              setCurrentTime(savedTime)
+            }
+          }
+          audio.addEventListener('loadedmetadata', applyTime, { once: true })
+          setWelcomeBack(true)
+          setTimeout(() => mounted && setWelcomeBack(false), 4000)
+        }
+      } catch (_) {}
+    }
+    const t = setTimeout(run, 100)
+    return () => { mounted = false; clearTimeout(t) }
+  }, [])
 
   const clearHistory = useCallback(() => {
     localStorage.setItem(HISTORY_KEY, '[]')
@@ -283,9 +449,16 @@ export function PlayerProvider({ children }) {
     shuffle,
     buffering,
     streamError,
-    setCurrentTrack,
+    preparingTrack,
+    loadTimeout,
+    setLoadTimeout,
+    welcomeBack,
+    setWelcomeBack,
+    setCurrentTrack: setCurrentTrackState,
     playTrack,
+    playTrackWithPlayingState,
     togglePlayPause,
+    playAudioDirect,
     seek,
     seekTo,
     setVolume,

@@ -33,21 +33,21 @@ export function LibraryPage({ onNavigate }) {
 
   const handlePlayAll = () => {
     if (library.length === 0) return
-    playTrack(library[0], library, 0)
+    playTrack(library[0], library, 0, true)
     onNavigate('nowplaying')
   }
 
   const handleShuffleAll = () => {
     if (library.length === 0) return
     const shuffled = [...library].sort(() => Math.random() - 0.5)
-    playTrack(shuffled[0], shuffled, 0)
+    playTrack(shuffled[0], shuffled, 0, true)
     onNavigate('nowplaying')
   }
 
   const handleTrackClick = (track) => {
     const list = selectedPlaylist?.tracks || library
     const idx = list.findIndex((t) => t.videoId === track.videoId)
-    playTrack(track, list, idx >= 0 ? idx : 0)
+    playTrack(track, list, idx >= 0 ? idx : 0, true)
     onNavigate('nowplaying')
   }
 
@@ -82,11 +82,11 @@ export function LibraryPage({ onNavigate }) {
         </button>
         <h2 className={styles.playlistHeader}>{p.name}</h2>
         <div className={styles.playlistActions}>
-          <button type="button" className={styles.actionBtn} onClick={() => tracks.length > 0 && (playTrack(tracks[0], tracks, 0), onNavigate('nowplaying'))}>
+          <button type="button" className={styles.actionBtn} onClick={() => tracks.length > 0 && (playTrack(tracks[0], tracks, 0, true), onNavigate('nowplaying'))}>
             <Play size={18} />
             PLAY ALL
           </button>
-          <button type="button" className={styles.actionBtn} onClick={() => tracks.length > 0 && (playTrack(tracks[Math.floor(Math.random() * tracks.length)], [...tracks].sort(() => Math.random() - 0.5), 0), onNavigate('nowplaying'))}>
+          <button type="button" className={styles.actionBtn} onClick={() => tracks.length > 0 && (playTrack(tracks[Math.floor(Math.random() * tracks.length)], [...tracks].sort(() => Math.random() - 0.5), 0, true), onNavigate('nowplaying'))}>
             <Shuffle size={18} />
             SHUFFLE
           </button>
@@ -196,7 +196,7 @@ export function LibraryPage({ onNavigate }) {
                   type="button"
                   className={styles.albumCard}
                   onClick={() => {
-                    playTrack(tracks[0], tracks, 0)
+                    playTrack(tracks[0], tracks, 0, true)
                     onNavigate('nowplaying')
                   }}
                 >

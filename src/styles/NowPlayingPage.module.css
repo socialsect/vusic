@@ -1,6 +1,7 @@
 .page {
   min-height: 100vh;
   padding: 24px 16px 100px;
+  padding-top: max(24px, env(safe-area-inset-top));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -24,14 +25,74 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: var(--accent);
-  animation: bufferingMove 1.2s linear infinite;
+  background: var(--border);
   z-index: 10;
+  overflow: hidden;
+}
+
+.bufferingBar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  background: var(--accent);
+  animation: bufferingMove 1.2s ease-in-out infinite;
 }
 
 @keyframes bufferingMove {
   0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  100% { transform: translateX(350%); }
+}
+
+.welcomeBack {
+  position: absolute;
+  top: max(24px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  z-index: 5;
+}
+
+.loadTimeout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: var(--error);
+  font-size: 0.8rem;
+}
+
+.loadTimeout button {
+  padding: 8px 16px;
+  border: 1px solid var(--error);
+  color: var(--error);
+  font-size: 0.75rem;
+}
+
+.loadTimeout button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.preparingText {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: 12px;
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .sleepPill {

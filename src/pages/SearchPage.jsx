@@ -64,7 +64,7 @@ export function SearchPage({ onNavigate }) {
   }, [debouncedQuery])
 
   const handleTrackClick = (track) => {
-    playTrack(track, results, results.findIndex((t) => t.videoId === track.videoId))
+    playTrack(track, results, results.findIndex((t) => t.videoId === track.videoId), true)
     onNavigate?.('nowplaying')
   }
 

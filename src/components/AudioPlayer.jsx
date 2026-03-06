@@ -1,14 +1,40 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { usePlayer } from '../context/PlayerContext'
+
+let iOSUnlocked = false
+
+function unlockiOSAudio(audioEl) {
+  if (!audioEl || iOSUnlocked) return
+  audioEl.play().then(() => {
+    audioEl.pause()
+    iOSUnlocked = true
+  }).catch(() => {})
+}
 
 export function AudioPlayer() {
   const { audioRef, currentTrack, isPlaying, togglePlayPause, playNext, playPrevious } = usePlayer()
+  const unlockAttempted = useRef(false)
 
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
-
     audio.preload = 'auto'
+  }, [])
+
+  useEffect(() => {
+    const handleFirstUserGesture = () => {
+      if (unlockAttempted.current) return
+      unlockAttempted.current = true
+      unlockiOSAudio(audioRef.current)
+      document.removeEventListener('click', handleFirstUserGesture)
+      document.removeEventListener('touchstart', handleFirstUserGesture)
+    }
+    document.addEventListener('click', handleFirstUserGesture, { once: true })
+    document.addEventListener('touchstart', handleFirstUserGesture, { once: true })
+    return () => {
+      document.removeEventListener('click', handleFirstUserGesture)
+      document.removeEventListener('touchstart', handleFirstUserGesture)
+    }
   }, [])
 
   useEffect(() => {
@@ -43,5 +69,20 @@ export function AudioPlayer() {
     }
   }, [currentTrack, isPlaying, togglePlayPause, playNext, playPrevious])
 
-  return <audio ref={audioRef} style={{ display: 'none' }} preload="auto" playsInline />
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.setAttribute('playsinline', 'true')
+    audio.setAttribute('webkit-playsinline', 'true')
+    audio.setAttribute('x-webkit-airplay', 'allow')
+  }, [])
+
+  return (
+    <audio
+      ref={audioRef}
+      style={{ display: 'none' }}
+      preload="auto"
+      playsInline
+    />
+  )
 }

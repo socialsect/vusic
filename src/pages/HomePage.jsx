@@ -41,13 +41,13 @@ export function HomePage({ onNavigate }) {
 
   const handleTrackClick = (track) => {
     const idx = history.findIndex((t) => t.videoId === track.videoId)
-    playTrack(track, history, idx >= 0 ? idx : 0)
+    playTrack(track, history, idx >= 0 ? idx : 0, true)
     onNavigate('nowplaying')
   }
 
   const handleMadeForYou = () => {
     if (madeForYouTracks.length === 0) return
-    playTrack(madeForYouTracks[0], madeForYouTracks, 0)
+    playTrack(madeForYouTracks[0], madeForYouTracks, 0, true)
     onNavigate('nowplaying')
   }
 

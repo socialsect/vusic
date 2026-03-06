@@ -9,7 +9,8 @@ import {
   Heart,
   MoreVertical,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Loader2
 } from 'lucide-react'
 import { usePlayer } from '../context/PlayerContext'
 import { useLikes } from '../context/LikesContext'
@@ -41,6 +42,7 @@ export function NowPlayingPage({ onNavigate }) {
   const touchStart = useRef({ x: 0, y: 0 })
 
   const {
+    audioRef,
     currentTrack,
     isPlaying,
     currentTime,
@@ -50,6 +52,10 @@ export function NowPlayingPage({ onNavigate }) {
     shuffle,
     buffering,
     streamError,
+    preparingTrack,
+    loadTimeout,
+    welcomeBack,
+    setLoadTimeout,
     queue,
     queueIndex,
     togglePlayPause,
@@ -58,6 +64,7 @@ export function NowPlayingPage({ onNavigate }) {
     setVolume,
     setLoop,
     setShuffle,
+    setIsPlaying,
     playNext,
     playPrevious,
     setStreamError,
@@ -153,7 +160,22 @@ export function NowPlayingPage({ onNavigate }) {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {buffering && !streamError && <div className={styles.bufferingBar} />}
+      {(preparingTrack || buffering) && !streamError && <div className={styles.bufferingBar} />}
+
+      {welcomeBack && (
+        <div className={styles.welcomeBack}>
+          WELCOME BACK · TAP TO RESUME
+        </div>
+      )}
+
+      {loadTimeout && (
+        <div className={styles.loadTimeout}>
+          <span>TAKING TOO LONG — TAP TO RETRY</span>
+          <button type="button" onClick={() => { setLoadTimeout(false); playTrack(currentTrack, queue, queueIndex, true) }}>
+            RETRY
+          </button>
+        </div>
+      )}
 
       {sleepTimerSeconds > 0 && (
         <div className={styles.sleepPill}>
@@ -174,6 +196,10 @@ export function NowPlayingPage({ onNavigate }) {
         <div className={styles.scanline} aria-hidden="true" />
       </div>
 
+      {preparingTrack && !streamError && (
+        <p className={styles.preparingText}>PREPARING TRACK...</p>
+      )}
+
       <div className={styles.header}>
         {isPlaying && <Equalizer />}
         <h1 className={styles.title}>{currentTrack.title}</h1>
@@ -190,15 +216,12 @@ export function NowPlayingPage({ onNavigate }) {
       {streamError && queue.length === 0 && (
         <div className={styles.error}>
           <span>STREAM FAILED</span>
-          <button type="button" onClick={() => { setStreamError(false); playTrack(currentTrack) }}>
+          <button type="button" onClick={() => { setStreamError(false); setLoadTimeout(false); playTrack(currentTrack, queue, queueIndex, true) }}>
             RETRY
           </button>
         </div>
       )}
 
-      {buffering && !streamError && (
-        <p className={styles.bufferingText}>BUFFERING...</p>
-      )}
 
       <div className={styles.progressSection}>
         <ProgressBar value={currentTime} max={duration || 0} onSeek={seekTo} disabled={!duration} />
@@ -218,10 +241,25 @@ export function NowPlayingPage({ onNavigate }) {
         <button
           type="button"
           className={`${styles.ctrlBtn} ${styles.playBtn}`}
-          onClick={togglePlayPause}
+          onClick={() => {
+            if (isPlaying) {
+              togglePlayPause()
+            } else {
+              if (audioRef.current) {
+                audioRef.current.play()
+                setIsPlaying(true)
+              }
+            }
+          }}
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? <Pause size={32} /> : <Play size={32} />}
+          {preparingTrack && !isPlaying ? (
+            <Loader2 size={32} className={styles.spinner} />
+          ) : isPlaying ? (
+            <Pause size={32} />
+          ) : (
+            <Play size={32} />
+          )}
         </button>
         <button type="button" className={styles.ctrlBtn} onClick={() => seek(10)} aria-label="Seek +10s">
           <RotateCw size={20} />
