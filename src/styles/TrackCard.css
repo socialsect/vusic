@@ -1,28 +1,30 @@
 .card {
+  background: var(--surface);
+  border: var(--border-width) solid #000;
+  box-shadow: var(--shadow);
+  padding: 12px;
   display: flex;
+  align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
   text-align: left;
-  transition: border-color 0.15s ease, padding-left 0.15s ease;
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
 }
 
 .card:hover {
-  border-color: var(--accent);
-  padding-left: 16px;
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-sm);
 }
 
 .card:active {
-  border-color: var(--accent);
+  transform: translate(4px, 4px);
+  box-shadow: none;
 }
 
 .thumbWrap {
   flex-shrink: 0;
   width: 120px;
   aspect-ratio: 16 / 9;
-  overflow: hidden;
 }
 
 .thumb {
@@ -30,6 +32,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  border: 2px solid #000;
 }
 
 .info {
@@ -48,14 +51,18 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .meta {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .channel {
@@ -66,4 +73,5 @@
 
 .duration {
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }

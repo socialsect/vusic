@@ -1,12 +1,15 @@
 .page {
   padding: 16px;
   padding-top: max(16px, env(safe-area-inset-top));
-  padding-bottom: 80px;
+  padding-bottom: 100px;
 }
 
 .searchWrap {
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  background: var(--surface);
+  border: var(--border-width) solid #000;
+  box-shadow: var(--shadow);
 }
 
 .searchIcon {
@@ -14,28 +17,20 @@
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--muted);
+  color: var(--accent);
   pointer-events: none;
 }
 
 .input {
   width: 100%;
   padding: 14px 14px 14px 44px;
-  font-family: 'Space Mono', monospace;
-  font-size: 1rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  border: none;
+  box-shadow: none;
+  background: transparent;
   color: var(--text);
-  transition: border-color 0.15s ease;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.input::placeholder {
-  color: var(--muted);
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .chipsRow {
@@ -49,102 +44,9 @@
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 12px;
+  padding-bottom: 8px;
   flex: 1;
   -webkit-overflow-scrolling: touch;
-}
-
-.editChipsBtn {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 1rem;
-}
-
-.editChipsBtn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.modalBackdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chipEditorModal {
-  width: 90%;
-  max-width: 340px;
-  padding: 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-
-.chipEditorModal h3 {
-  font-size: 0.9rem;
-  margin-bottom: 16px;
-}
-
-.chipEditorAdd {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.chipEditorAdd input {
-  flex: 1;
-  padding: 10px 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-
-.chipEditorAdd button {
-  padding: 10px 16px;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-}
-
-.chipEditorList {
-  list-style: none;
-  margin-bottom: 16px;
-}
-
-.chipEditorList li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.chipEditorList li button {
-  color: var(--muted);
-}
-
-.chipEditorList li button:hover {
-  color: var(--error);
-}
-
-.resetChipsBtn {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 8px;
-  border: 1px solid var(--border);
-  font-size: 0.75rem;
-}
-
-.closeChipEditor {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid var(--accent);
-  color: var(--accent);
 }
 
 .chips::-webkit-scrollbar {
@@ -153,26 +55,45 @@
 
 .chip {
   flex-shrink: 0;
-  padding: 8px 14px;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--surface2);
+  border: 2px solid #000;
+  box-shadow: var(--shadow-sm);
   color: var(--text);
-  transition: border-color 0.15s ease, color 0.15s ease;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
 }
 
 .chip:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.chip:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+.editChipsBtn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: var(--surface2);
+  border: 2px solid #000;
+  box-shadow: var(--shadow-sm);
+  font-size: 1rem;
 }
 
 .recent {
-  margin-bottom: 20px;
-  border: 1px solid var(--border);
-  padding: 12px;
+  margin-bottom: 24px;
   background: var(--surface);
+  border: var(--border-width) solid #000;
+  box-shadow: var(--shadow);
+  padding: 12px;
 }
 
 .recentHeader {
@@ -182,72 +103,34 @@
   margin-bottom: 8px;
 }
 
-.label {
-  text-transform: uppercase;
-  letter-spacing: 2.5px;
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-
 .clearBtn {
-  padding: 4px 8px;
-  color: var(--muted);
-  font-size: 0.8rem;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-.clearBtn:hover {
-  color: var(--accent);
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: var(--surface2);
+  border: 2px solid #000;
+  box-shadow: var(--shadow-sm);
 }
 
 .recentList {
   list-style: none;
-}
-
-.recentItem {
-  width: 100%;
-  padding: 10px 0;
-  text-align: left;
-  color: var(--text);
-  font-size: 0.9rem;
-  border-bottom: 1px solid var(--border);
-  transition: border-color 0.15s ease, color 0.15s ease;
-}
-
-.recentItem:last-child {
-  border-bottom: none;
-}
-
-.recentItem:hover {
-  color: var(--accent);
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .recentTrackItem {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
-  width: 100%;
-  padding: 10px 0;
+  padding: 10px 12px;
   text-align: left;
-  color: var(--text);
-  border: none;
-  background: none;
-  font: inherit;
-  cursor: pointer;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.recentTrackItem:last-child {
-  border-bottom: none;
-}
-
-.recentTrackItem:hover {
-  color: var(--accent);
-}
-
-.recentTrackItem:active {
-  background: var(--bg);
+  background: var(--surface2);
+  border: 2px solid #000;
+  box-shadow: var(--shadow-sm);
 }
 
 .recentThumb {
@@ -255,7 +138,7 @@
   height: 48px;
   object-fit: cover;
   flex-shrink: 0;
-  border-radius: 4px;
+  border: 2px solid #000;
 }
 
 .recentTrackInfo {
@@ -268,21 +151,25 @@
 }
 
 .recentTrackTitle {
+  width: 100%;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .recentTrackChannel {
-  font-size: 0.75rem;
+  width: 100%;
+  font-size: 0.7rem;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .results {
@@ -292,11 +179,104 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .empty {
   color: var(--muted);
   text-align: center;
-  padding: 40px 0;
+  padding: 48px 0;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.chipEditorModal {
+  width: 100%;
+  max-width: 360px;
+  padding: 16px;
+  background: var(--surface);
+  border: var(--border-width) solid #000;
+  box-shadow: -4px -4px 0px #000;
+}
+
+.chipEditorModal h3 {
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.chipEditorAdd {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chipEditorAdd input {
+  flex: 1;
+}
+
+.chipEditorAdd button {
+  padding: 10px 14px;
+  background: var(--accent);
+  color: #000;
+}
+
+.chipEditorList {
+  list-style: none;
+  margin: 0 0 16px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chipEditorList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 2px solid #000;
+  box-shadow: var(--shadow-sm);
+}
+
+.chipEditorList li span {
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.chipEditorList li button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: var(--surface);
+  border: 2px solid #000;
+  box-shadow: var(--shadow-sm);
+}
+
+.resetChipsBtn {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.closeChipEditor {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--accent);
+  color: #000;
 }

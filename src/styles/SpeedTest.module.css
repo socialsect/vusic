@@ -1,58 +1,62 @@
 .speedTest {
   padding: 16px;
-  border: 1px solid var(--border);
   background: var(--surface);
+  border: var(--border-width) solid #000;
+  box-shadow: var(--shadow);
 }
 
 .title {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--muted);
-  margin-bottom: 12px;
+  letter-spacing: 4px;
+  color: var(--accent);
+  border-left: 4px solid var(--accent);
+  padding-left: 10px;
+  margin-bottom: 16px;
 }
 
 .runBtn,
 .retryBtn {
-  padding: 10px 20px;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  font-size: 0.8rem;
-}
-
-.runBtn:hover,
-.retryBtn:hover {
+  width: 100%;
+  padding: 12px 14px;
   background: var(--accent);
-  color: var(--bg);
+  color: #000;
+  font-size: 0.7rem;
+  letter-spacing: 3px;
 }
 
 .running {
-  color: var(--accent);
-  font-size: 0.9rem;
   padding: 12px 0;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-size: 0.7rem;
 }
 
 .result {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 12px;
+  display: grid;
+  gap: 6px;
+  padding: 12px 0;
 }
 
 .speed {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--accent);
+  font-variant-numeric: tabular-nums;
 }
 
 .label {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--muted);
   text-transform: uppercase;
+  letter-spacing: 4px;
 }
 
 .error {
   color: var(--error);
-  font-size: 0.85rem;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
   margin-bottom: 12px;
 }

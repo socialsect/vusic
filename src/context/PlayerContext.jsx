@@ -33,6 +33,8 @@ export function PlayerProvider({ children }) {
   const errorRetryCountRef = useRef(0)
   const shouldPlayRef = useRef(false)
   const prefetchedRef = useRef(new Set())
+  const skipToNextRef = useRef(null)
+  const skipToPrevRef = useRef(null)
 
   const [currentTrack, setCurrentTrackState] = useState(() => {
     try {
@@ -291,8 +293,84 @@ export function PlayerProvider({ children }) {
   }, [queue, queueIndex, currentTime, playTrackWithPlayingState])
 
   useEffect(() => {
+    skipToNextRef.current = playNext
+    skipToPrevRef.current = playPrevious
+  }, [playNext, playPrevious])
+
+  function registerMediaSession(track, audioEl) {
+    if (!('mediaSession' in navigator)) return
+    if (!track || !audioEl) return
+
+    const thumb = track.thumbnail || ''
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title || 'Unknown',
+      artist: track.channel || 'Vusic',
+      album: 'Vusic',
+      artwork: thumb
+        ? [
+            { src: thumb, sizes: '96x96', type: 'image/jpeg' },
+            { src: thumb, sizes: '128x128', type: 'image/jpeg' },
+            { src: thumb, sizes: '192x192', type: 'image/jpeg' },
+            { src: thumb, sizes: '256x256', type: 'image/jpeg' },
+            { src: thumb, sizes: '384x384', type: 'image/jpeg' },
+            { src: thumb, sizes: '512x512', type: 'image/jpeg' },
+          ]
+        : []
+    })
+
+    navigator.mediaSession.setActionHandler('play', () => {
+      audioEl.play().catch(() => {})
+      navigator.mediaSession.playbackState = 'playing'
+    })
+
+    navigator.mediaSession.setActionHandler('pause', () => {
+      audioEl.pause()
+      navigator.mediaSession.playbackState = 'paused'
+    })
+
+    navigator.mediaSession.setActionHandler('nexttrack', () => {
+      skipToNextRef.current?.()
+    })
+
+    navigator.mediaSession.setActionHandler('previoustrack', () => {
+      skipToPrevRef.current?.()
+    })
+
+    navigator.mediaSession.setActionHandler('seekbackward', (d) => {
+      audioEl.currentTime = Math.max(0, audioEl.currentTime - (d?.seekOffset || 10))
+    })
+
+    navigator.mediaSession.setActionHandler('seekforward', (d) => {
+      audioEl.currentTime = Math.min(
+        isFinite(audioEl.duration) ? audioEl.duration : 0,
+        audioEl.currentTime + (d?.seekOffset || 10)
+      )
+    })
+
+    navigator.mediaSession.setActionHandler('seekto', (d) => {
+      if (d?.seekTime !== undefined && isFinite(d.seekTime)) {
+        audioEl.currentTime = d.seekTime
+      }
+    })
+  }
+
+  useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume
   }, [volume])
+
+  useEffect(() => {
+    if (currentTrack && audioRef.current) {
+      registerMediaSession(currentTrack, audioRef.current)
+    }
+  }, [currentTrack])
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'
+    if (currentTrack && audioRef.current) {
+      registerMediaSession(currentTrack, audioRef.current)
+    }
+  }, [isPlaying, currentTrack])
 
   useEffect(() => {
     if (currentTrack) {
@@ -377,7 +455,7 @@ export function PlayerProvider({ children }) {
         const nextTrack = queue[queueIndex + 1]
         if (nextTrack && !prefetchedRef.current.has(nextTrack.videoId)) {
           prefetchedRef.current.add(nextTrack.videoId)
-          console.log('[prefetch] warming cache for:', nextTrack.title)
+          console.log(`[prefetch] triggered for: ${nextTrack.title} at ${Math.floor(audio.currentTime)}s`)
           fetch(`${BASE_URL}/api/prefetch/${nextTrack.videoId}?quality=${currentQuality}`).catch(() => {})
         }
       }
@@ -385,6 +463,7 @@ export function PlayerProvider({ children }) {
         const twoAhead = queue[queueIndex + 2]
         if (twoAhead && !prefetchedRef.current.has(twoAhead.videoId)) {
           prefetchedRef.current.add(twoAhead.videoId)
+          console.log(`[prefetch] triggered for: ${twoAhead.title} at ${Math.floor(audio.currentTime)}s`)
           fetch(`${BASE_URL}/api/prefetch/${twoAhead.videoId}?quality=${currentQuality}`).catch(() => {})
         }
       }
@@ -445,22 +524,7 @@ export function PlayerProvider({ children }) {
       setIsPlaying(true)
       if ('mediaSession' in navigator) {
         navigator.mediaSession.playbackState = 'playing'
-        if (currentTrack) {
-          const thumb = currentTrack.thumbnail || ''
-          navigator.mediaSession.metadata = new MediaMetadata({
-            title: currentTrack.title || 'Unknown',
-            artist: currentTrack.channel || 'Unknown',
-            album: 'Vusic',
-            artwork: thumb ? [
-              { src: thumb, sizes: '96x96', type: 'image/jpeg' },
-              { src: thumb, sizes: '128x128', type: 'image/jpeg' },
-              { src: thumb, sizes: '192x192', type: 'image/jpeg' },
-              { src: thumb, sizes: '256x256', type: 'image/jpeg' },
-              { src: thumb, sizes: '384x384', type: 'image/jpeg' },
-              { src: thumb, sizes: '512x512', type: 'image/jpeg' }
-            ] : []
-          })
-        }
+        registerMediaSession(currentTrack, audio)
       }
     }
     const onPause = () => {
@@ -505,31 +569,7 @@ export function PlayerProvider({ children }) {
       }
     }
 
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.setActionHandler('play', () => {
-        if (audioRef.current) {
-          audioRef.current.play()
-          setIsPlaying(true)
-          navigator.mediaSession.playbackState = 'playing'
-        }
-      })
-      navigator.mediaSession.setActionHandler('pause', () => {
-        if (audioRef.current) {
-          audioRef.current.pause()
-          setIsPlaying(false)
-          navigator.mediaSession.playbackState = 'paused'
-        }
-      })
-      navigator.mediaSession.setActionHandler('nexttrack', () => playNext())
-      navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious())
-      navigator.mediaSession.setActionHandler('seekbackward', () => playPrevious())
-      navigator.mediaSession.setActionHandler('seekforward', () => playNext())
-      navigator.mediaSession.setActionHandler('seekto', (details) => {
-        if (audioRef.current && details.seekTime !== undefined) {
-          audioRef.current.currentTime = details.seekTime
-        }
-      })
-    }
+    if ('mediaSession' in navigator) registerMediaSession(currentTrack, audio)
 
     audio.addEventListener('loadedmetadata', onLoadedMetadata)
     audio.addEventListener('timeupdate', onTimeUpdate)

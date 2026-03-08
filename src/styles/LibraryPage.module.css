@@ -1,47 +1,44 @@
 .page {
   padding: 16px;
   padding-top: max(16px, env(safe-area-inset-top));
-  padding-bottom: 100px;
+  padding-bottom: 120px;
 }
 
 .tabs {
   display: flex;
-  gap: 0;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 24px;
 }
 
 .tab {
   flex: 1;
-  padding: 12px 8px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--muted);
-  border-bottom: 2px solid transparent;
-}
-
-.tab:hover {
+  padding: 12px 10px;
+  background: var(--surface2);
+  border: 2px solid #000;
+  box-shadow: var(--shadow-sm);
   color: var(--text);
+  font-size: 0.65rem;
+  letter-spacing: 3px;
 }
 
 .tabActive {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+  background: var(--accent);
+  color: #000;
 }
 
 .sectionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
 .count {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 4px;
 }
 
 .btns {
@@ -51,58 +48,49 @@
 
 .playAllBtn,
 .shuffleBtn {
-  padding: 8px 14px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border: 1px solid var(--border);
+  padding: 10px 14px;
+  background: var(--accent);
+  color: #000;
+  border: 2px solid #000;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.65rem;
+  letter-spacing: 3px;
 }
 
-.playAllBtn {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.shuffleBtn:hover,
-.playAllBtn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+.shuffleBtn {
+  background: var(--surface2);
+  color: var(--text);
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
 .trackRow {
-  border: 1px solid var(--border);
-}
-
-.trackRow:hover {
-  border-color: var(--accent);
+  width: 100%;
 }
 
 .trackRowWithHeart {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
-  border: 1px solid var(--border);
-}
-
-.trackRowWithHeart:hover {
-  border-color: var(--accent);
 }
 
 .trackRowWithHeart > div:first-child {
   flex: 1;
+  min-width: 0;
 }
 
 .heartBtn {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  color: var(--accent);
+  width: 52px;
+  padding: 0;
+  background: var(--accent);
+  color: #000;
+  border: var(--border-width) solid #000;
+  box-shadow: var(--shadow);
 }
 
 .playlistGrid {
@@ -113,34 +101,33 @@
 
 .newPlaylistCard {
   aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   gap: 8px;
-  border: 2px dashed var(--border);
-  color: var(--muted);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.newPlaylistCard:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--surface);
+  border: var(--border-width) solid #000;
+  box-shadow: var(--shadow);
+  color: var(--text);
+  letter-spacing: 3px;
+  font-size: 0.65rem;
 }
 
 .playlistCard {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   text-align: left;
-  border: 1px solid var(--border);
-  overflow: hidden;
+  background: var(--surface);
+  border: var(--border-width) solid #000;
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
 }
 
 .playlistCard:hover {
-  border-color: var(--accent);
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.playlistCard:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
 }
 
 .playlistCover {
@@ -148,28 +135,43 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
+  border-bottom: 2px solid #000;
 }
 
 .playlistCover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-right: 2px solid #000;
+  border-bottom: 2px solid #000;
+}
+
+.playlistCover img:nth-child(2n) {
+  border-right: none;
+}
+
+.playlistCover img:nth-child(n + 3) {
+  border-bottom: none;
 }
 
 .coverPlaceholder {
-  background: var(--accent);
+  background: var(--surface2);
 }
 
 .playlistName {
+  padding: 12px 12px 4px;
   font-weight: 700;
-  font-size: 0.9rem;
-  padding: 0 8px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-size: 0.75rem;
 }
 
 .playlistCount {
-  font-size: 0.75rem;
+  padding: 0 12px 12px;
+  font-size: 0.65rem;
   color: var(--muted);
-  padding: 0 8px 8px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
 }
 
 .albumGrid {
@@ -179,126 +181,131 @@
 }
 
 .albumCard {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   text-align: left;
-  border: 1px solid var(--border);
-  overflow: hidden;
+  background: var(--surface);
+  border: var(--border-width) solid #000;
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
 }
 
 .albumCard:hover {
-  border-color: var(--accent);
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.albumCard:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
 }
 
 .albumCard img {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
+  display: block;
+  border-bottom: 2px solid #000;
 }
 
 .albumName {
+  padding: 12px 12px 4px;
   font-weight: 700;
-  font-size: 0.9rem;
-  padding: 0 8px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-size: 0.75rem;
 }
 
 .albumCount {
-  font-size: 0.75rem;
+  padding: 0 12px 12px;
+  font-size: 0.65rem;
   color: var(--muted);
-  padding: 0 8px 8px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
 }
 
 .empty {
   color: var(--muted);
   text-align: center;
   padding: 60px 20px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
 }
 
 .backBtn {
-  align-self: flex-start;
   margin-bottom: 16px;
-  color: var(--accent);
-  font-size: 0.8rem;
+  padding: 10px 14px;
+  background: var(--surface2);
+  box-shadow: var(--shadow-sm);
+  border: 2px solid #000;
+  letter-spacing: 3px;
+  font-size: 0.65rem;
 }
 
 .playlistHeader {
-  font-size: 1.2rem;
-  margin-bottom: 16px;
+  background: var(--surface);
+  border: var(--border-width) solid #000;
+  box-shadow: var(--shadow);
+  padding: 12px;
+  letter-spacing: 1px;
 }
 
 .playlistActions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  margin-bottom: 20px;
+  margin: 16px 0 24px;
 }
 
 .actionBtn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border: 1px solid var(--border);
-}
-
-.actionBtn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 2px solid #000;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.65rem;
+  letter-spacing: 3px;
 }
 
 .deletePlaylistBtn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  font-size: 0.7rem;
-  color: var(--error);
-  border: 1px solid var(--error);
+  background: var(--accent);
+  color: #000;
+  border: 2px solid #000;
 }
 
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.85);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
 }
 
 .modal {
-  width: 90%;
-  max-width: 320px;
-  padding: 24px;
+  width: 100%;
+  max-width: 360px;
+  padding: 16px;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: var(--border-width) solid #000;
+  box-shadow: -4px -4px 0px #000;
 }
 
 .modalInput {
   width: 100%;
-  padding: 12px;
-  margin-bottom: 16px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
+  margin-bottom: 12px;
 }
 
 .modalBtns {
-  display: flex;
-  gap: 12px;
-}
-
-.modalBtns button {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .modalBtns button:first-child {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--accent);
+  color: #000;
 }

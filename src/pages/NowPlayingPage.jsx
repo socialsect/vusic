@@ -38,7 +38,6 @@ export function NowPlayingPage({ onNavigate }) {
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [queueOpen, setQueueOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [lyricsOpen, setLyricsOpen] = useState(false)
   const [sleepPickerOpen, setSleepPickerOpen] = useState(false)
   const [playlistPickerOpen, setPlaylistPickerOpen] = useState(false)
   const touchStart = useRef({ x: 0, y: 0 })
@@ -157,6 +156,7 @@ export function NowPlayingPage({ onNavigate }) {
   const safeDuration = Number.isFinite(duration) && !Number.isNaN(duration) && duration > 0 ? duration : 0
   const safeCurrentTime = Number.isFinite(currentTime) && !Number.isNaN(currentTime) ? Math.max(0, currentTime) : 0
   const remaining = safeDuration > 0 ? safeDuration - safeCurrentTime : 0
+  const shouldMarquee = String(currentTrack.title || '').length > 28
 
   return (
     <div
@@ -211,7 +211,9 @@ export function NowPlayingPage({ onNavigate }) {
 
       <div className={styles.header}>
         {isPlaying && <Equalizer />}
-        <h1 className={styles.title}>{currentTrack.title}</h1>
+        <h1 className={`${styles.title} ${shouldMarquee ? styles.marquee : ''}`}>
+          <span className={styles.titleInner}>{currentTrack.title}</span>
+        </h1>
         <p className={styles.channel}>{currentTrack.channel?.toUpperCase() || 'UNKNOWN'}</p>
         <button
           type="button"
@@ -304,22 +306,6 @@ export function NowPlayingPage({ onNavigate }) {
         >
           <span>HISTORY</span>
         </button>
-      </div>
-
-      <div className={styles.lyrics}>
-        <button
-          type="button"
-          className={styles.lyricsToggle}
-          onClick={() => setLyricsOpen((v) => !v)}
-        >
-          <span>LYRICS</span>
-          {lyricsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-        </button>
-        {lyricsOpen && (
-          <div className={styles.lyricsContent}>
-            Lyrics not available
-          </div>
-        )}
       </div>
 
       {optionsOpen && (
