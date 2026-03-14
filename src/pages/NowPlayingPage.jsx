@@ -80,16 +80,23 @@ export function NowPlayingPage({ onNavigate }) {
 
   const { isLiked, toggleLike, addToLibrary } = useLikes()
   const titleRef = useRef(null)
-  const [titleOverflow, setTitleOverflow] = useState(false)
+  const [marqueeActive, setMarqueeActive] = useState(false)
 
   useEffect(() => {
     const el = titleRef.current
     if (!el) return
-    const check = () => setTitleOverflow(el.scrollWidth > el.clientWidth)
-    check()
-    const ro = new ResizeObserver(check)
-    ro.observe(el)
-    return () => ro.disconnect()
+
+    // Remove animation first, measure, then re-apply if needed
+    setMarqueeActive(false)
+
+    const timer = setTimeout(() => {
+      if (!el) return
+      if (el.scrollWidth > el.clientWidth) {
+        setMarqueeActive(true)
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [currentTrack?.title])
   const toast = useToast()
   const liked = currentTrack && isLiked(currentTrack.videoId)
@@ -229,7 +236,10 @@ export function NowPlayingPage({ onNavigate }) {
 
       <div className={styles.header}>
         <div className={styles.titleWrap}>
-          <h1 ref={titleRef} className={`${styles.title} ${titleOverflow ? styles.overflow : ''}`}>
+          <h1
+            ref={titleRef}
+            className={`${styles.title} ${marqueeActive ? styles.marqueeActive : ''}`}
+          >
             {currentTrack.title}
           </h1>
         </div>

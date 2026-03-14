@@ -84,20 +84,23 @@
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
+  display: block;
+  width: 100%;
+  position: relative;
 }
 
-.title.overflow {
-  display: inline-block;
-  animation: marqueeNp 8s linear infinite;
-  animation-delay: 2s;
+.title.marqueeActive {
+  animation: marqueeNp 10s linear 2s infinite;
 }
 
 @keyframes marqueeNp {
-  0% {
+  0%,
+  20% {
     transform: translateX(0);
   }
+  80%,
   100% {
-    transform: translateX(-100%);
+    transform: translateX(-60%);
   }
 }
 
