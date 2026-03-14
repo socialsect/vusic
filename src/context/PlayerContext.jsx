@@ -347,12 +347,12 @@ export function PlayerProvider({ children }) {
       album: 'Vusic',
       artwork: thumb
         ? [
-            { src: thumb, sizes: '96x96', type: 'image/jpeg' },
-            { src: thumb, sizes: '128x128', type: 'image/jpeg' },
-            { src: thumb, sizes: '192x192', type: 'image/jpeg' },
-            { src: thumb, sizes: '256x256', type: 'image/jpeg' },
-            { src: thumb, sizes: '384x384', type: 'image/jpeg' },
-            { src: thumb, sizes: '512x512', type: 'image/jpeg' },
+            { src: thumb, sizes: '96x96' },
+            { src: thumb, sizes: '128x128' },
+            { src: thumb, sizes: '192x192' },
+            { src: thumb, sizes: '256x256' },
+            { src: thumb, sizes: '384x384' },
+            { src: thumb, sizes: '512x512' },
           ]
         : []
     })

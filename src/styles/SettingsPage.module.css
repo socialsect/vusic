@@ -186,18 +186,18 @@
   color: #000;
 }
 
-/* Equalizer - vertical sliders */
+/* Equalizer - clearer vertical sliders */
 .eqBlock {
   background: var(--surface);
   border: 2px solid #000;
   box-shadow: 3px 3px 0 #000;
-  padding: 16px 12px;
+  padding: 16px 14px;
 }
 
 .eqSliders {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 28px;
   margin-bottom: 12px;
 }
 
@@ -205,7 +205,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .eqLabel {
@@ -216,13 +216,13 @@
 }
 
 .eqValue {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
 
 .eqInputWrap {
-  height: 120px;
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -231,30 +231,32 @@
 .eqSlider {
   -webkit-appearance: none;
   appearance: none;
-  width: 8px;
-  height: 120px;
+  width: 10px;
+  height: 140px;
   writing-mode: vertical-lr;
   direction: rtl;
-  background: linear-gradient(to top, var(--accent), var(--surface2));
+  background: var(--surface2);
   border: 2px solid #000;
   border-radius: 0;
 }
 
 .eqSlider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   background: var(--accent);
   border: 2px solid #000;
   cursor: pointer;
+  box-shadow: 2px 2px 0 #000;
 }
 
 .eqSlider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   background: var(--accent);
   border: 2px solid #000;
   cursor: pointer;
+  box-shadow: 2px 2px 0 #000;
 }
 
 .eqReset {

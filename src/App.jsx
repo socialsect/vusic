@@ -108,6 +108,7 @@ export default function App() {
                   <div className={styles.status}>
                     LOADING <span className={styles.statusText}>{SPLASH_STATUSES[statusIndex]}</span>
                   </div>
+                  <div className={styles.splashBadge}>V5</div>
                 </div>
               </div>
             )}

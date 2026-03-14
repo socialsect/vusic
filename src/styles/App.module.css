@@ -150,6 +150,21 @@
   align-items: center;
 }
 
+.splashBadge {
+  position: absolute;
+  left: 50%;
+  bottom: -32px;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  background: #c8f135;
+  color: #000;
+  border: 2px solid #000;
+  box-shadow: 3px 3px 0 #000;
+}
+
 .eqIntro {
   display: flex;
   align-items: flex-end;
