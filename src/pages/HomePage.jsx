@@ -7,7 +7,6 @@ import { Heart } from 'lucide-react'
 import styles from '../styles/HomePage.module.css'
 
 const HISTORY_KEY = 'vusic_history'
-const BASE_URL = 'https://vusic-backend-production.up.railway.app'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -19,8 +18,8 @@ function getGreeting() {
 export function HomePage({ onNavigate }) {
   const [history] = useLocalStorage(HISTORY_KEY, [])
   const [discoverTracks, setDiscoverTracks] = useState([])
-  const [discoverQuery, setDiscoverQuery] = useState('')
-  const { playTrack } = usePlayer()
+  const [discoverLabel, setDiscoverLabel] = useState('')
+  const { playTrack, fetchRecommendations, BASE_URL } = usePlayer()
   const { isLiked, toggleLike } = useLikes()
 
   const continueTracks = history.slice(0, 6)
@@ -30,14 +29,26 @@ export function HomePage({ onNavigate }) {
   useEffect(() => {
     if (history.length === 0) return
     const last = history[0]
-    const q = last?.title || ''
-    if (!q.trim()) return
-    setDiscoverQuery(q)
-    fetch(`${BASE_URL}/api/search?q=${encodeURIComponent(q)}`)
-      .then((r) => r.json())
-      .then((data) => setDiscoverTracks((data.items || []).slice(0, 10)))
-      .catch(() => setDiscoverTracks([]))
-  }, [history.length, history[0]?.videoId])
+    const artist = last?.channel || ''
+    const trackTitle = last?.title || ''
+    if (!artist.trim()) return
+    setDiscoverLabel(trackTitle ? `BECAUSE YOU PLAYED ${(trackTitle.length > 30 ? trackTitle.slice(0, 30) + '...' : trackTitle).toUpperCase()}` : 'DISCOVER')
+    fetchRecommendations(artist, { appendToQueue: false, showToasts: false }).then((tracks) => {
+      if (tracks && tracks.length > 0) {
+        setDiscoverTracks(tracks.slice(0, 10))
+      } else {
+        fetch(`${BASE_URL}/api/search?q=${encodeURIComponent(artist)}`)
+          .then((r) => r.json())
+          .then((data) => setDiscoverTracks((data.items || []).slice(0, 10)))
+          .catch(() => setDiscoverTracks([]))
+      }
+    }).catch(() => {
+        fetch(`${BASE_URL}/api/search?q=${encodeURIComponent(artist)}`)
+        .then((r) => r.json())
+        .then((data) => setDiscoverTracks((data.items || []).slice(0, 10)))
+        .catch(() => setDiscoverTracks([]))
+    })
+  }, [history.length, history[0]?.videoId, history[0]?.channel, fetchRecommendations, BASE_URL])
 
   const handleTrackClick = (track) => {
     const idx = history.findIndex((t) => t.videoId === track.videoId)
@@ -116,8 +127,8 @@ export function HomePage({ onNavigate }) {
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>
-          {history.length > 0 && discoverQuery
-            ? `BECAUSE YOU PLAYED ${discoverQuery.toUpperCase().slice(0, 30)}${discoverQuery.length > 30 ? '...' : ''}`
+          {history.length > 0 && discoverLabel
+            ? discoverLabel
             : 'DISCOVER'}
         </h2>
         {history.length > 0 && discoverTracks.length > 0 ? (

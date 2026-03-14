@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { useTheme } from '../context/ThemeContext'
+import { usePlayer } from '../context/PlayerContext'
 import { SpeedTest } from '../components/SpeedTest'
 import styles from '../styles/SettingsPage.module.css'
 
@@ -49,6 +50,7 @@ export function SettingsPage() {
   const [showClearLibrary, setShowClearLibrary] = useState(false)
   const [showChangelog, setShowChangelog] = useState(false)
   const { theme, setTheme } = useTheme()
+  const { bands = { bass: 0, mid: 0, treble: 0 }, setBand } = usePlayer()
 
   const clearHistory = () => {
     setHistory([])
@@ -64,6 +66,12 @@ export function SettingsPage() {
   const setFontSize = (f) => {
     setSettings((s) => ({ ...s, fontSize: f }))
     document.documentElement.style.fontSize = FONT_OPTS.find((o) => o.id === f)?.size + 'px' || '16px'
+  }
+
+  const resetEQ = () => {
+    setBand('bass', 0)
+    setBand('mid', 0)
+    setBand('treble', 0)
   }
 
   const estStorage = () => {
@@ -141,6 +149,36 @@ export function SettingsPage() {
               {settings.autoplay ? 'ON' : 'OFF'}
             </button>
           </div>
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>EQUALIZER</h2>
+        <div className={styles.eqBlock}>
+          <div className={styles.eqSliders}>
+            {['bass', 'mid', 'treble'].map((band) => (
+              <div key={band} className={styles.eqSliderWrap}>
+                <span className={styles.eqLabel}>{band.toUpperCase()}</span>
+                <span className={styles.eqValue}>
+                  {bands[band] > 0 ? `+${bands[band]}` : bands[band]} dB
+                </span>
+                <div className={styles.eqInputWrap}>
+                  <input
+                    type="range"
+                    min="-12"
+                    max="12"
+                    step="1"
+                    value={bands[band] ?? 0}
+                    onChange={(e) => setBand(band, Number(e.target.value))}
+                    className={styles.eqSlider}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <button type="button" className={styles.eqReset} onClick={resetEQ}>
+            RESET
+          </button>
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 import { createContext, useContext, useRef, useState, useCallback, useEffect } from 'react'
 import { useToast } from './ToastContext'
+import { useEqualizer } from '../hooks/useEqualizer'
 
 const BASE_URL = 'https://vusic-backend-production.up.railway.app'
 const HISTORY_KEY = 'vusic_history'
@@ -27,6 +28,7 @@ const PlayerContext = createContext(null)
 export function PlayerProvider({ children }) {
   const toast = useToast()
   const audioRef = useRef(null)
+  const { bands, setBand, initEQ, applyBands } = useEqualizer(audioRef)
   const preloadRef = useRef(null)
   const saveTimeIntervalRef = useRef(null)
   const loadTimeoutTimerRef = useRef(null)
@@ -123,6 +125,10 @@ export function PlayerProvider({ children }) {
   const playTrack = useCallback(
     (track, newQueue = null, index = 0, fromUserGesture = false) => {
       if (!track?.videoId) return
+      if (fromUserGesture) {
+        initEQ()
+        applyBands()
+      }
       setCurrentTrackState(track)
       setStreamError(false)
       setLoadTimeout(false)
@@ -157,8 +163,12 @@ export function PlayerProvider({ children }) {
   )
 
   const playTrackWithPlayingState = useCallback(
-    (track, newQueue, index, wasPlaying) => {
+    (track, newQueue, index, wasPlaying, fromUserGesture = false) => {
       if (!track?.videoId) return
+      if (fromUserGesture) {
+        initEQ()
+        applyBands()
+      }
       setCurrentTrackState(track)
       setStreamError(false)
       setLoadTimeout(false)
@@ -193,7 +203,7 @@ export function PlayerProvider({ children }) {
 
   const jumpToQueueIndex = useCallback((idx) => {
     const track = queue[idx]
-    if (track) playTrackWithPlayingState(track, queue, idx, isPlaying)
+    if (track) playTrackWithPlayingState(track, queue, idx, isPlaying, true)
   }, [queue, playTrackWithPlayingState, isPlaying])
 
   const playAudioDirect = useCallback(() => {
@@ -208,10 +218,12 @@ export function PlayerProvider({ children }) {
       if (isPlaying) {
         audioRef.current.pause()
       } else {
+        initEQ()
+        applyBands()
         audioRef.current.play().catch(() => {})
       }
     }
-  }, [currentTrack, isPlaying])
+  }, [currentTrack, isPlaying, initEQ, applyBands])
 
   const seek = useCallback((seconds) => {
     if (!audioRef.current) return
@@ -236,18 +248,50 @@ export function PlayerProvider({ children }) {
     } catch {}
   }, [])
 
-  const fetchMoreByArtist = useCallback(async (artistName) => {
+  const fetchRecommendations = useCallback(async (artistName, options = {}) => {
+    const { appendToQueue = true, showToasts = true } = options
     try {
-      const res = await fetch(`${BASE_URL}/api/search?q=${encodeURIComponent(artistName)}`)
-      const data = await res.json()
+      if (showToasts) toast('FINDING SIMILAR SONGS...')
+      const res = await fetch(`${BASE_URL}/api/recommendations/${encodeURIComponent(artistName)}`)
+      const { queries, similarArtists } = await res.json()
+
       const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
       const historyIds = new Set(history.map((t) => t.videoId))
-      const newTracks = (data.items || []).filter((t) => t.videoId && !historyIds.has(t.videoId))
-      return newTracks
-    } catch {
+      const allTracks = []
+
+      for (const query of (queries || []).slice(0, 4)) {
+        try {
+          const r = await fetch(`${BASE_URL}/api/search?q=${encodeURIComponent(query)}`)
+          const data = await r.json()
+          const fresh = (data.items || []).filter((t) => !historyIds.has(t.videoId)).slice(0, 3)
+          allTracks.push(...fresh)
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      const seen = new Set()
+      const unique = allTracks.filter((t) => {
+        if (seen.has(t.videoId)) return false
+        seen.add(t.videoId)
+        return true
+      })
+
+      if (unique.length > 0) {
+        if (appendToQueue) {
+          setQueue((prev) => [...prev, ...unique])
+          if (showToasts) toast(`ADDED ${unique.length} SIMILAR SONGS`)
+        }
+        if (similarArtists?.length > 0) {
+          console.log('[rec] similar artists:', similarArtists.join(', '))
+        }
+      }
+      return unique
+    } catch (err) {
+      console.error('Recommendations error:', err)
       return []
     }
-  }, [])
+  }, [toast])
 
   const playNext = useCallback(() => {
     if (queue.length === 0) return false
@@ -255,15 +299,10 @@ export function PlayerProvider({ children }) {
     if (!loop && !shuffle && atEnd) {
       const artist = currentTrack?.channel
       if (!artist) return false
-      toast(`LOADING MORE FROM ${artist.toUpperCase()}`)
-      fetchMoreByArtist(artist).then((newTracks) => {
-        const queueIds = new Set(queue.map((t) => t.videoId))
-        const filtered = newTracks.filter((t) => !queueIds.has(t.videoId))
-        if (filtered.length > 0) {
-          const newQueue = [...queue, ...filtered]
-          setQueue(newQueue)
-          setQueueIndex(queue.length)
-          playTrackWithPlayingState(filtered[0], newQueue, queue.length, true)
+      fetchRecommendations(artist).then((newTracks) => {
+        if (newTracks.length > 0) {
+          const newQueue = [...queue, ...newTracks]
+          playTrackWithPlayingState(newTracks[0], newQueue, queue.length, true)
         }
       })
       return true
@@ -276,9 +315,9 @@ export function PlayerProvider({ children }) {
       if (!loop && nextIndex === queueIndex && queueIndex < queue.length - 1) nextIndex = queueIndex + 1
     }
     const nextTrack = queue[nextIndex]
-    if (nextTrack) playTrackWithPlayingState(nextTrack, queue, nextIndex, true)
+    if (nextTrack) playTrackWithPlayingState(nextTrack, queue, nextIndex, true, true)
     return !!nextTrack
-  }, [queue, queueIndex, loop, shuffle, currentTrack, playTrackWithPlayingState, toast, fetchMoreByArtist])
+  }, [queue, queueIndex, loop, shuffle, currentTrack, playTrackWithPlayingState, toast, fetchRecommendations])
 
   const playPrevious = useCallback(() => {
     if (currentTime > 3 && audioRef.current) {
@@ -289,7 +328,7 @@ export function PlayerProvider({ children }) {
     if (queue.length === 0) return
     const prevIndex = Math.max(0, queueIndex - 1)
     const prevTrack = queue[prevIndex]
-    if (prevTrack) playTrackWithPlayingState(prevTrack, queue, prevIndex, true)
+    if (prevTrack) playTrackWithPlayingState(prevTrack, queue, prevIndex, true, true)
   }, [queue, queueIndex, currentTime, playTrackWithPlayingState])
 
   useEffect(() => {
@@ -400,17 +439,10 @@ export function PlayerProvider({ children }) {
   }, [currentTrack, queue, queueIndex, preloadNextTrack])
 
   useEffect(() => {
-    if (queue.length < 2 || queueIndex !== queue.length - 2 || !currentTrack?.channel) return
-    fetchMoreByArtist(currentTrack.channel).then((newTracks) => {
-      if (newTracks.length === 0) return
-      setQueue((prev) => {
-        const ids = new Set(prev.map((t) => t.videoId))
-        const filtered = newTracks.filter((t) => t.videoId && !ids.has(t.videoId))
-        if (filtered.length === 0) return prev
-        return [...prev, ...filtered]
-      })
-    })
-  }, [queueIndex, queue.length, currentTrack?.channel, fetchMoreByArtist])
+    const remaining = queue.length - queueIndex - 1
+    if (remaining > 2 || !currentTrack?.channel) return
+    fetchRecommendations(currentTrack.channel).catch(() => {})
+  }, [queueIndex, queue.length, currentTrack?.channel, fetchRecommendations])
 
   useEffect(() => {
     if (sleepTimerSeconds <= 0) return
@@ -481,15 +513,10 @@ export function PlayerProvider({ children }) {
       }
       const artist = currentTrack?.channel
       if (!artist) return
-      toast(`LOADING MORE FROM ${artist.toUpperCase()}`)
-      fetchMoreByArtist(artist).then((newTracks) => {
-        const queueIds = new Set(queue.map((t) => t.videoId))
-        const filtered = newTracks.filter((t) => !queueIds.has(t.videoId))
-        if (filtered.length > 0) {
-          const newQueue = [...queue, ...filtered]
-          setQueue(newQueue)
-          setQueueIndex(queue.length)
-          playTrackWithPlayingState(filtered[0], newQueue, queue.length, true)
+      fetchRecommendations(artist).then((newTracks) => {
+        if (newTracks.length > 0) {
+          const newQueue = [...queue, ...newTracks]
+          playTrackWithPlayingState(newTracks[0], newQueue, queue.length, true)
         }
       })
     }
@@ -592,7 +619,7 @@ export function PlayerProvider({ children }) {
       audio.removeEventListener('waiting', onWaiting)
       audio.removeEventListener('error', onError)
     }
-  }, [currentTrack, loop, shuffle, queue, queueIndex, playTrackWithPlayingState, playNext, playPrevious, toast, fetchMoreByArtist])
+  }, [currentTrack, loop, shuffle, queue, queueIndex, playTrackWithPlayingState, playNext, playPrevious, toast, fetchRecommendations])
 
   useEffect(() => {
     async function warmCache() {
@@ -703,7 +730,10 @@ export function PlayerProvider({ children }) {
     addToQueue,
     jumpToQueueIndex,
     sleepTimerSeconds,
-    setSleepTimerSeconds
+    setSleepTimerSeconds,
+    bands,
+    setBand,
+    fetchRecommendations
   }
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>

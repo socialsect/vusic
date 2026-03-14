@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   SkipBack,
   SkipForward,
@@ -8,9 +8,10 @@ import {
   Pause,
   Heart,
   MoreVertical,
-  ChevronDown,
-  ChevronUp,
-  Loader2
+  ChevronLeft,
+  Loader2,
+  Library,
+  List
 } from 'lucide-react'
 import { usePlayer } from '../context/PlayerContext'
 import { useLikes } from '../context/LikesContext'
@@ -73,10 +74,23 @@ export function NowPlayingPage({ onNavigate }) {
     jumpToQueueIndex,
     recentHistory,
     sleepTimerSeconds,
-    setSleepTimerSeconds
+    setSleepTimerSeconds,
+    bands
   } = usePlayer()
 
   const { isLiked, toggleLike, addToLibrary } = useLikes()
+  const titleRef = useRef(null)
+  const [titleOverflow, setTitleOverflow] = useState(false)
+
+  useEffect(() => {
+    const el = titleRef.current
+    if (!el) return
+    const check = () => setTitleOverflow(el.scrollWidth > el.clientWidth)
+    check()
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [currentTrack?.title])
   const toast = useToast()
   const liked = currentTrack && isLiked(currentTrack.videoId)
 
@@ -156,7 +170,14 @@ export function NowPlayingPage({ onNavigate }) {
   const safeDuration = Number.isFinite(duration) && !Number.isNaN(duration) && duration > 0 ? duration : 0
   const safeCurrentTime = Number.isFinite(currentTime) && !Number.isNaN(currentTime) ? Math.max(0, currentTime) : 0
   const remaining = safeDuration > 0 ? safeDuration - safeCurrentTime : 0
-  const shouldMarquee = String(currentTrack.title || '').length > 28
+  const b = bands || { bass: 0, mid: 0, treble: 0 }
+  const eqBarHeights = [
+    20 + (b.bass * 1.2),
+    24 + (b.bass * 1.5),
+    20 + (b.mid * 1.5),
+    16 + (b.mid * 0.8 + b.treble * 0.5),
+    20 + (b.treble * 1.5)
+  ].map((h) => Math.max(4, Math.min(24, h)))
 
   return (
     <div
@@ -187,17 +208,14 @@ export function NowPlayingPage({ onNavigate }) {
         </div>
       )}
 
-      <button
-        type="button"
-        className={styles.optionsBtn}
-        onClick={() => setOptionsOpen(true)}
-      >
-        <MoreVertical size={24} />
-      </button>
-
-      <div className={styles.vLogoWrap} aria-hidden="true">
-        <div className={styles.vLogoStroke} />
-        <div className={styles.vLogoStroke} />
+      <div className={styles.topBar}>
+        <button type="button" className={styles.backBtn} onClick={() => onNavigate?.('home')} aria-label="Back">
+          <ChevronLeft size={24} />
+        </button>
+        <span className={styles.topBarLabel}>NOW PLAYING</span>
+        <button type="button" className={styles.optionsBtn} onClick={() => setOptionsOpen(true)} aria-label="Options">
+          <MoreVertical size={24} />
+        </button>
       </div>
 
       <div className={styles.thumbWrap}>
@@ -210,10 +228,11 @@ export function NowPlayingPage({ onNavigate }) {
       )}
 
       <div className={styles.header}>
-        {isPlaying && <Equalizer />}
-        <h1 className={`${styles.title} ${shouldMarquee ? styles.marquee : ''}`}>
-          <span className={styles.titleInner}>{currentTrack.title}</span>
-        </h1>
+        <div className={styles.titleWrap}>
+          <h1 ref={titleRef} className={`${styles.title} ${titleOverflow ? styles.overflow : ''}`}>
+            {currentTrack.title}
+          </h1>
+        </div>
         <p className={styles.channel}>{currentTrack.channel?.toUpperCase() || 'UNKNOWN'}</p>
         <button
           type="button"
@@ -222,6 +241,12 @@ export function NowPlayingPage({ onNavigate }) {
         >
           <Heart size={24} fill={liked ? 'currentColor' : 'none'} />
         </button>
+      </div>
+
+      <div className={styles.eqViz} aria-hidden="true">
+        {eqBarHeights.map((h, i) => (
+          <div key={i} className={styles.eqVizBar} style={{ height: `${h}px` }} />
+        ))}
       </div>
 
       {streamError && queue.length === 0 && (
@@ -280,31 +305,37 @@ export function NowPlayingPage({ onNavigate }) {
           type="button"
           className={`${styles.extraBtn} ${loop ? styles.active : ''}`}
           onClick={() => setLoop(!loop)}
+          title="Loop"
+          aria-label="Loop"
         >
           <RotateCcw size={18} />
-          <span>LOOP</span>
         </button>
         <button
           type="button"
           className={`${styles.extraBtn} ${shuffle ? styles.active : ''}`}
           onClick={() => setShuffle(!shuffle)}
+          title="Shuffle"
+          aria-label="Shuffle"
         >
           <SkipForward size={18} />
-          <span>SHUFFLE</span>
+        </button>
+        <button
+          type="button"
+          className={styles.extraBtn}
+          onClick={() => { currentTrack && addToLibrary(currentTrack); toast('ADDED TO LIBRARY ✓') }}
+          title="Add to Library"
+          aria-label="Add to Library"
+        >
+          <Library size={18} />
         </button>
         <button
           type="button"
           className={styles.extraBtn}
           onClick={() => setQueueOpen(true)}
+          title="Queue"
+          aria-label="Queue"
         >
-          <span>QUEUE</span>
-        </button>
-        <button
-          type="button"
-          className={styles.extraBtn}
-          onClick={() => setHistoryOpen(true)}
-        >
-          <span>HISTORY</span>
+          <List size={18} />
         </button>
       </div>
 
