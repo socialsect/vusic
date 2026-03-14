@@ -18,6 +18,7 @@ export function AudioPlayer() {
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
+    audio.crossOrigin = 'anonymous'
     audio.setAttribute('playsinline', '')
     audio.setAttribute('webkit-playsinline', '')
     audio.setAttribute('x-webkit-airplay', 'allow')
