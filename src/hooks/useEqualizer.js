@@ -26,6 +26,15 @@ export function useEqualizer(audioRef) {
       const ctx = new AudioContext()
       audioCtxRef.current = ctx
 
+      // iOS: ensure crossOrigin is set before creating source
+      try {
+        if (audioRef.current) {
+          audioRef.current.crossOrigin = 'anonymous'
+        }
+      } catch {
+        // ignore
+      }
+
       const source = ctx.createMediaElementSource(audioRef.current)
       sourceRef.current = source
       sourceCreatedRef.current = true
@@ -124,6 +133,46 @@ export function useEqualizer(audioRef) {
       // ignore
     }
   }
+
+  // Handle iOS background/foreground behaviour for Web Audio
+  useEffect(() => {
+    const handleVisibility = () => {
+      const ctx = audioCtxRef.current
+      const source = sourceRef.current
+      const bass = bassFilterRef.current
+      const gain = gainRef.current
+
+      if (!ctx || !source) return
+
+      if (document.visibilityState === 'hidden') {
+        // In background: bypass EQ so native audio can keep playing
+        try {
+          source.disconnect()
+          source.connect(ctx.destination)
+        } catch {
+          // ignore
+        }
+      } else {
+        // Foreground: resume context and reconnect full EQ chain
+        if (ctx.state === 'suspended') {
+          ctx.resume().catch(() => {})
+        }
+        try {
+          source.disconnect()
+          if (bass && gain) {
+            source.connect(bass)
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [])
 
   return { bands, setBand, initEQ, applyBands }
 }
